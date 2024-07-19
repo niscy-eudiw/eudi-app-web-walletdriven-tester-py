@@ -1,0 +1,9 @@
+Flask-Cors 
+flask==2.3.3 
+werkzeug==2.3.7 
+requests
+segno
+Flask-Session==0.6.0
+cbor2==5.4.6
+pycose
+cryptography
