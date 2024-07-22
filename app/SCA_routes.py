@@ -43,7 +43,6 @@ import requests
 from requests.auth import HTTPBasicAuth
 import cbor2
 
-from app.validate_vp_token import validate_vp_token
 # from . import oidc_metadata
 from pycose.messages import Sign1Message
 from pycose.keys import CoseKey
@@ -157,6 +156,7 @@ def upload_document():
 
     }
 
+    return payload
     #return jsonify(payload)
     response = requests.request("POST", cfgserv.SCA + "signatures/signDoc" , headers=headers, data=json.dumps(payload))
 
@@ -170,79 +170,3 @@ def upload_document():
     
     return response["documentWithSignature"][0]
     
-
-def cbor2elems(mdoc):
-    """Receives the base64 encoded mdoc and returns a dict with the (element, value) contained in the namespaces of the mdoc
-
-    Keyword arguments:
-    + mdoc -- base64 encoded mdoc
-
-    Return: Returns a dict with (element, values) contained in the namespaces of the mdoc. E.g. {'ns1': [('e1', 'v1'), ('e2', 'v2')], 'ns2': [('e3', 'v3')]}
-    """
-    d = {}
-
-    #print(mdoc)
-    mdoc_ver=None
-    try:
-        mdoc_ver=base64.urlsafe_b64decode(mdoc)
-        
-    except:
-        mdoc_ver=base64.urlsafe_b64decode(mdoc + '==')    
-    
-    #print(mdoc_ver)
-        
-    namespaces = cbor2.decoder.loads(mdoc_ver)["documents"][0]["issuerSigned"]["nameSpaces"]
-
-    for n in namespaces.keys():
-        l = []
-        for e in namespaces[n]:  # e is a CBORTag
-            val = cbor2.decoder.loads(e.value)
-            id = val["elementIdentifier"]
-            #print(val["elementValue"])
-            if (
-                id == "birth_date" or
-                id == "expiry_date" or
-                id=="issuance_date" or
-                id=="issue_date"
-            ):  # value of birthdate is a CBORTag
-                l.append((id, val["elementValue"].value))
-                
-            elif id == "driving_privileges":
-                driv_dict={}
-                i=0
-                for attribute in val["elementValue"]:
-                    driv_dict.update({i:{}})
-                    
-                    for driv_attribute, value in attribute.items():
-                        if type(value)==str:
-                            driv_dict[i].update({driv_attribute:value})
-                        else:
-                            driv_dict[i].update({driv_attribute:value.value})
-                    i+=1
-
-                l.append((id, driv_dict))
-            elif id=="portrait":
-                value= base64.b64encode(val["elementValue"]).decode("utf-8")
-                l.append((id, value))
-            else:
-                l.append((id, val["elementValue"]))
-        d[n] = l
-    return d
-
-def getMandatoryAttributes(attributes):
-    """
-    Function to get mandatory attributes from credential
-    """
-
-    #print("\n------getAttributes-------\n", attributes)
-    #print(type(attributes))
-    attributes_form = []
-    optional_attributes=[]
-    for attribute in attributes:
-        if attributes[attribute]["mandatory"] == True :
-            
-            attributes_form.append(attribute)
-        else:
-            optional_attributes.append(attribute)
-
-    return attributes_form,optional_attributes
