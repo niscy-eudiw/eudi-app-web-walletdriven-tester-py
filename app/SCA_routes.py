@@ -148,6 +148,7 @@ def upload_document():
             "conformance_level": level,
             "signed_envelope_property":packaging,
             "signAlgo":oid_alg[digest_algorithm],
+            "container": container,
             "operationMode":"S"
             # "signAlgoParams":"Base64-encoded DER-encoded ASN.1 signature parameters"
         }],
@@ -156,7 +157,7 @@ def upload_document():
 
     }
 
-    return payload
+    #return payload
     #return jsonify(payload)
     response = requests.request("POST", cfgserv.SCA + "signatures/signDoc" , headers=headers, data=json.dumps(payload))
 
@@ -165,8 +166,8 @@ def upload_document():
     # return auth_error_redirect(redirect_uri,"invalid_request")
 
     response = response.json()
-    with open(os.path.join("app\pdfs","test.pdf"), "wb") as f:
-        f.write(base64.b64decode(response["documentWithSignature"][0]))
+    # with open(os.path.join("app\pdfs","test.pdf"), "wb") as f:
+    #     f.write(base64.b64decode(response["documentWithSignature"][0]))
     
-    return response["documentWithSignature"][0]
+    return response
     

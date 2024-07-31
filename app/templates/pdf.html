@@ -61,8 +61,7 @@
 
                             <div class="form-check col-md-12">
                                 <label class="form-check-label" for="flexCheckDefault">
-                                    <input class="form-check-input" type="file" name="upload" id="filename"
-                                        accept="application/pdf"  />
+                                    <input class="form-check-input" type="file" name="upload" id="filename"  />
                                 </label>
                             </div>
                             
@@ -104,17 +103,17 @@
                                 <h3 >Packaging</h3>
                                 <div class="form-group">
                                     <label class="radio-inline ">
-                                        <input type="radio" id="enveloped" name="packaging" value="Enveloped" style="transform:scale(1.5)" disabled required > 
+                                        <input type="radio" id="enveloped" name="packaging" value="ENVELOPED" style="transform:scale(1.5)" disabled required > 
                                         Enveloped                                        
                                     </label>
                                     <label class="radio-inline">
-                                        <input type="radio" id="enveloping" name="packaging" value="Enveloping" style="transform:scale(1.5)" disabled> Enveloping                                        
+                                        <input type="radio" id="enveloping" name="packaging" value="ENVELOPING" style="transform:scale(1.5)" disabled> Enveloping                                        
                                     </label>
                                     <label class="radio-inline">
-                                        <input type="radio" id="detached" name="packaging" value="Detached" style="transform:scale(1.5)" disabled> Detached
+                                        <input type="radio" id="detached" name="packaging" value="DETACHED" style="transform:scale(1.5)" disabled> Detached
                                     </label>
                                     <label class="radio-inline">
-                                        <input type="radio" id="internally" name="packaging" value="Internally detached" style="transform:scale(1.5)" disabled> Internally detached
+                                        <input type="radio" id="internally" name="packaging" value="INTERNALLY_DETACHED" style="transform:scale(1.5)" disabled> Internally detached
                                     </label>
                                 </div>
                             </div>
@@ -235,10 +234,10 @@
             internally_detached.disabled=false
 
             var options = [
-                {value: 'AdES-B-B', text:'XAdES-BASELINE-B'},
-                {value: 'AdES-B-T', text:'XAdES-BASELINE-T'},
-                {value: 'AdES-B-LT', text:'XAdES-BASELINE-LT'},
-                {value: 'AdES-B-LTA', text:'XAdES-BASELINE-LTA'},
+                {value: 'Ades-B-B', text:'XAdES-BASELINE-B'},
+                {value: 'Ades-B-T', text:'XAdES-BASELINE-T'},
+                {value: 'Ades-B-LT', text:'XAdES-BASELINE-LT'},
+                {value: 'Ades-B-LTA', text:'XAdES-BASELINE-LTA'},
             ]
 
             populate_select(options)
@@ -252,10 +251,10 @@
             internally_detached.disabled=true
 
             var options = [
-                {value: 'AdES-B-B', text:'CAdES-BASELINE-B'},
-                {value: 'AdES-B-T', text:'CAdES-BASELINE-T'},
-                {value: 'AdES-B-LT', text:'CAdES-BASELINE-LT'},
-                {value: 'AdES-B-LTA', text:'CAdES-BASELINE-LTA'},
+                {value: 'Ades-B-B', text:'CAdES-BASELINE-B'},
+                {value: 'Ades-B-T', text:'CAdES-BASELINE-T'},
+                {value: 'Ades-B-LT', text:'CAdES-BASELINE-LT'},
+                {value: 'Ades-B-LTA', text:'CAdES-BASELINE-LTA'},
             ]
 
             populate_select(options)
@@ -268,10 +267,10 @@
             internally_detached.disabled=true
 
             var options = [
-                {value: 'AdES-B-B', text:'PAdES-BASELINE-B'},
-                {value: 'AdES-B-T', text:'PAdES-BASELINE-T'},
-                {value: 'AdES-B-LT', text:'PAdES-BASELINE-LT'},
-                {value: 'AdES-B-LTA', text:'PAdES-BASELINE-LTA'},
+                {value: 'Ades-B-B', text:'PAdES-BASELINE-B'},
+                {value: 'Ades-B-T', text:'PAdES-BASELINE-T'},
+                {value: 'Ades-B-LT', text:'PAdES-BASELINE-LT'},
+                {value: 'Ades-B-LTA', text:'PAdES-BASELINE-LTA'},
             ]
 
             populate_select(options)
@@ -285,10 +284,10 @@
             internally_detached.disabled=true
 
             var options = [
-                {value: 'AdES-B-B', text:'JAdES-BASELINE-B'},
-                {value: 'AdES-B-T', text:'JAdES-BASELINE-T'},
-                {value: 'AdES-B-LT', text:'JAdES-BASELINE-LT'},
-                {value: 'AdES-B-LTA', text:'JAdES-BASELINE-LTA'},
+                {value: 'Ades-B-B', text:'JAdES-BASELINE-B'},
+                {value: 'Ades-B-T', text:'JAdES-BASELINE-T'},
+                {value: 'Ades-B-LT', text:'JAdES-BASELINE-LT'},
+                {value: 'Ades-B-LTA', text:'JAdES-BASELINE-LTA'},
             ]
 
             populate_select(options)
@@ -310,11 +309,11 @@
             let input = event.target;
             let path = input.value;
 
-            if(path.includes('.pdf') == false){
-                alert(" File Not Type [.pdf]");
+            // if(path.includes('.pdf') == false){
+            //     alert(" File Not Type [.pdf]");
                 
-                return false
-            }
+            //     return false
+            // }
 
             let file = input.files[0];
             console.log(URL.createObjectURL(file))
