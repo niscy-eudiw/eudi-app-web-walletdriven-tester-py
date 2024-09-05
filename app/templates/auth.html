@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetch Data Example</title>
+</head>
+<body>
+    <h1>Get Access Token</h1>
+    
+    <button id="fetchButton">Get Access Token</button>
+    <p id="result">Placeholder for the EUDI Wallet link</p>
+
+    <!-- Container to hold the input box -->
+    <div id="inputContainer">
+        <p id="description">After authorization the wallet will redirect to a link. Introduce link redirect to in the input box below.</p>
+        <input type="text" id="authLink" placeholder="Enter your response here">
+        <button id="submitButton">Submit</button>
+    </div>
+
+    <p id="accesstoken">Placeholder for the access token</p>
+
+    <button id="createcredentialsButton">Create Credentials Temporary</button>
+    <button id="credentialsPage">Move to CredentialsPage</button>
+    <button id="skipButton">Move to Signature Page</button>
+
+    <script>
+        let cookie_status;
+        
+        document.getElementById('fetchButton').addEventListener('click', function() {
+            // Replace 'your-endpoint-url' with the actual URL of your endpoint
+            fetch('{{redirect_url}}service_authorization') // Example endpoint for demonstration
+                .then(response => response.json()) // Get the response as a string
+                .then(data => {
+                    console.log("1:"+data["location"]);
+                    console.log("2:"+data["cookie"]);
+                    cookie_status = data["cookie"];
+                    document.getElementById('result').textContent = data["location"]; // Display the returned string
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('result').textContent = 'An error occurred while fetching data.';
+                });
+        });
+
+        document.getElementById('submitButton').addEventListener('click', function(){
+            const userInput = document.getElementById('authLink').value;
+            console.log(userInput);
+            fetch('{{redirect_url}}service_authorization_link', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ link: userInput, cookie: cookie_status }),
+            }) // Example endpoint for demonstration
+            .then(response => response.json()) // Get the response as a string
+            .then(data => {
+                console.log(data);   
+                document.getElementById('accesstoken').textContent = data;
+            }) 
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
+        document.getElementById('createcredentialsButton').addEventListener('click', function(){
+            fetch("{{redirect_url}}createcredentials");
+        })
+
+        document.getElementById('credentialsPage').addEventListener('click', function(){
+            window.location.href = "{{redirect_url}}credentials_page";
+        })
+
+        document.getElementById('skipButton').addEventListener('click', function(){
+            window.location.href = "{{redirect_url}}select_pdf";
+        })
+    </script>
+</body>
+</html>
