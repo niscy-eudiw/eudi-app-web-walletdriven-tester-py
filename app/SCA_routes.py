@@ -114,16 +114,12 @@ def upload_document():
         "credentialID": credentialChosen,
         "documents":[{
             "document":base64_pdf,
-            # "hashes":"hashes array",
-            # "hashAlgorithmOID": "hash OID",
             "signature_format":signature_format[0],
             "conformance_level": level,
             "signed_envelope_property":packaging,
-            "signAlgo":oid_alg[digest_algorithm],
-            "container": container,
-            "operationMode":"S",
-            # "signAlgoParams":"Base64-encoded DER-encoded ASN.1 signature parameters"
+            "container": container
         }],
+        "hashAlgorithmOID": "2.16.840.1.101.3.4.2.1",
         "request_uri":"http://localhost:8081",
         "clientData": "12345678"
     }
@@ -227,7 +223,7 @@ def oauth_login_code():
 
 @sca.route("/authorization_credential", methods=["GET", "POST"])
 def authorization_credential():
-    print("Bearer "+service_access_token["access_token"])
+    print("initial token: "+"Bearer "+service_access_token["access_token"])
     
     document= request.files['upload']
     
@@ -255,9 +251,9 @@ def authorization_credential():
             "signature_format":signature_format[0],
             "conformance_level": level,
             "signed_envelope_property":packaging,
-            "signAlgo":"1.2.840.113549.1.1.11",
+            "container": container
         }],
-        "hashAlgorithmOID":"",
+        "hashAlgorithmOID":"2.16.840.1.101.3.4.2.1",
         "authorizationServerUrl":"http://localhost:9000",
         "resourceServerUrl":"http://localhost:8081",
         "clientData": "12345678"
