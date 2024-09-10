@@ -137,10 +137,13 @@ def upload_document():
 def service_authorization():
     # generate nonce
     global code_verifier
-    code_verifier_bytes = secrets.token_bytes(32)
+    code_verifier = secrets.token_urlsafe(32)
+    print(code_verifier)
     code_challenge_method = "S256"
-    code_challenge = hashlib.sha256(code_verifier_bytes).hexdigest()
-    code_verifier = code_verifier_bytes.hex()
+    print(code_challenge_method)
+    code_challenge_bytes = hashlib.sha256(code_verifier.encode()).digest()
+    code_challenge = base64.urlsafe_b64encode(code_challenge_bytes).decode()
+    print(code_challenge)
     
     # format url-encoded request
     params = {
