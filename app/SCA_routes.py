@@ -15,57 +15,24 @@
 # limitations under the License.
 #
 ###############################################################################
-"""
-This SCA_routes.py file is the blueprint of the Wallet service.
-"""
 
 import base64
-import binascii
-import io
 import json
 import os
-from uuid import uuid4
-import cbor2
 from flask import (
     Blueprint,
-    Flask,
-    flash,
-    g,
-    redirect,
     render_template,
     request,
-    session,
-    url_for,
     jsonify,
 )
-import segno
 import requests
-from requests.auth import HTTPBasicAuth
-import cbor2
 
 # from . import oidc_metadata
-from pycose.messages import Sign1Message
-from pycose.keys import CoseKey
-from pycose.headers import Algorithm, KID
-from pycose.algorithms import EdDSA
-from pycose.keys.curves import Ed25519
-from pycose.keys.keyparam import KpKty, OKPKpD, OKPKpX, KpKeyOps, OKPKpCurve
-from pycose.keys.keytype import KtyOKP
-from pycose.keys.keyops import SignOp, VerifyOp
 import base64
-from binascii import unhexlify
-from pycose.messages import Sign1Message
-import cbor2
-from pycose.keys import EC2Key, CoseKey
-
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
-from cryptography import x509
-
 import secrets
 import hashlib
-
 from app_config.config import ConfService as cfgserv
+from base64 import b64decode
 
 sca = Blueprint("SCA", __name__, url_prefix="/")
 
@@ -79,6 +46,7 @@ service_access_token = None
 credentialChosen = None
 form_global = None
 hash = None
+date = None
 
 # Change HTML Page
 @sca.route('/', methods=['GET', 'POST'])
@@ -110,6 +78,8 @@ def upload_document():
         'Authorization': "Bearer "+service_access_token["access_token"],
     }
 
+    print(date)
+
     payload = {
         "credentialID": credentialChosen,
         "documents":[{
@@ -120,17 +90,25 @@ def upload_document():
             "container": container
         }],
         "hashAlgorithmOID": "2.16.840.1.101.3.4.2.1",
-        "request_uri":"http://localhost:8081",
+        "request_uri":"https://walletcentric.signer.eudiw.dev",
+        "signature_date": date,
         "clientData": "12345678"
     }
 
+    print(payload)
+
     #return payload
     #return jsonify(payload)
-    response = requests.request("POST", cfgserv.SCA + "signatures/signDoc" , headers=headers, data=json.dumps(payload))
-    response = response.json()
+    response = requests.request("POST", "https://walletcentric.signer.eudiw.dev/signatures/signDoc" , headers=headers, data=json.dumps(payload))
+    print(response.json()["documentWithSignature"][0])
+    
+    bytes = b64decode(response.json()["documentWithSignature"][0], validate=True)
+    f = open('file_signed.pdf', 'wb')
+    f.write(bytes)
+    f.close()
     # with open(os.path.join("app\pdfs","test.pdf"), "wb") as f:
     #     f.write(base64.b64decode(response["documentWithSignature"][0]))
-    return response
+    return response.json()["documentWithSignature"][0]
     
 # starts the authentication process throught the /oauth2/authorize and receives the link to the wallet
 @sca.route('/service_authorization', methods=['GET','POST'])
@@ -157,7 +135,7 @@ def service_authorization():
         "state": "12345678"
     }
     
-    uri =  "http://localhost:9000/oauth2/authorize"
+    uri = "https://walletcentric.signer.eudiw.dev/oauth2/authorize"
     response = requests.get(url = uri, params = params, allow_redirects = False)
 
     # get location to redirect & cookie returned
@@ -219,9 +197,9 @@ def oauth_login_code():
     authorization_basic = authorization_value(client_id, client_secret)
     headers_a = {'Authorization': authorization_basic}
     
-    uri =  "http://localhost:9000/oauth2/token"
+    uri =  "https://walletcentric.signer.eudiw.dev/oauth2/token"
     response = requests.post(url = uri, params = params, headers = headers_a, allow_redirects = False)
-    
+    print(response.json())
     return response.json()
 
 @sca.route("/authorization_credential", methods=["GET", "POST"])
@@ -257,12 +235,12 @@ def authorization_credential():
             "container": container
         }],
         "hashAlgorithmOID":"2.16.840.1.101.3.4.2.1",
-        "authorizationServerUrl":"http://localhost:9000",
-        "resourceServerUrl":"http://localhost:8081",
+        "authorizationServerUrl":"https://walletcentric.signer.eudiw.dev",
+        "resourceServerUrl":"https://walletcentric.signer.eudiw.dev",
         "clientData": "12345678"
     }
     
-    uri = "http://localhost:8082/credential/authorize"
+    uri = "https://walletcentric.signer.eudiw.dev/credential/authorize"
     response = requests.get(url = uri, headers=headers, data=json.dumps(payload), allow_redirects = False)
     print(response.json())
     
@@ -270,6 +248,10 @@ def authorization_credential():
     print(location)
     cookie = response.json().get("session_cookie")
     print(cookie)
+    date_l = response.json().get("signature_date")
+    print(date_l)
+    global date
+    date = date_l
 
     # show location
     response_json = {"location": location, "cookie": cookie}
@@ -289,19 +271,10 @@ def credentials_list():
         "certInfo": "true"
     })
 
-    uri =  "http://localhost:8081/csc/v2/credentials/list"
+    uri =  "https://walletcentric.signer.eudiw.dev/csc/v2/credentials/list"
     response = requests.post(url = uri, data=payload, headers = headers_a, allow_redirects = False)
+    print(response)
     return response.json()
-
-@sca.route("/createcredentials", methods=["GET", "POST"])
-def createcredentials():
-    print(service_access_token)
-    authorization_header = "Bearer "+service_access_token["access_token"]
-    print(authorization_header)
-    headers_a = {'Authorization': authorization_header}
-    uri =  "http://localhost:8081/csc/v2/credentials/createCredentials"
-    response = requests.get(url = uri, headers = headers_a, allow_redirects = False)
-    return response.status_code
 
 @sca.route("/set_credentialId", methods=["GET", "POST"])
 def setCredentialId():

@@ -35,8 +35,8 @@ class ConfService:
 
     metadata_supported_credentials_url="https://issuer.eudiw.dev/.well-known//openid-credential-issuer"
 
-    QTSP_url="http://localhost:8081/"
-    SCA="http://localhost:8082/"
+    QTSP_url="https://walletcentric.signer.eudiw.dev"
+    SCA="https://walletcentric.signer.eudiw.dev"
 
     credentials_not_supported=[
         # "eu.europa.ec.eudiw.loyalty_mdoc",

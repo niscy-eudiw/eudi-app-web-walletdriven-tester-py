@@ -1,49 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fetch Data Example</title>
+    <meta charset="utf-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no" />
+    <meta name="Title" content="Request Credentials" />
+    <meta name="Keywords" content="EUDI Wallet, Credentials, Enrolment" />
+    <meta name="Description" content="Request Credentials for EUDI Wallet" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}"
+        type="image/vnd.microsoft.icon" />
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.gif') }}" type="image/gif" />
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}" />
+    <link href="{{ url_for('static', filename='bootstrap-3.4.1-dist/css/bootstrap.min.css') }}" rel="stylesheet"
+        type="text/css" />
+    <link href="{{ url_for('static', filename='css/stylesheets/custom/custom_en_9.7.1.20.1679559965505.css') }}"
+        media="all" rel="stylesheet" type="text/css" />
+    <link href="{{ url_for('static', filename='fontawesome-free-5.15.4-web/css/fontawesome.min.css') }}"
+        rel="stylesheet" type="text/css" />
+    <script type="text/javascript" id="jqueryId"
+        src="{{ url_for('static', filename='scripts/jquery/jquery-3.6.3.min.js') }}" charset="UTF-8"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='scripts/promiz/promiz-1.0.6.js') }}"
+        charset="UTF-8"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='bootstrap-3.4.1-dist/js/bootstrap.min.js') }}"
+        charset="UTF-8" defer="true"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='scripts/html5shiv/html5shiv-3.7.3.js') }}"
+        charset="UTF-8"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='scripts/respond/respond-1.4.2.js') }}"
+        charset="UTF-8"></script>
+    <meta name="referrer" content="no-referrer">
+    <script type="text/javascript"
+        src="{{ url_for('static', filename='scripts/loc/loc_en_9.7.1.20.1679559965505.js') }}" charset="UTF-8"></script>
+    <title>QTSP Authentication</title>
 </head>
-<body>
-    <h1>Get Access Token</h1>
-    
-    <button id="fetchButton">Get Access Token</button>
-    <p id="result">Placeholder for the EUDI Wallet link</p>
 
-    <!-- Container to hold the input box -->
-    <div id="inputContainer">
-        <p id="description">After authorization the wallet will redirect to a link. Introduce link redirect to in the input box below.</p>
-        <input type="text" id="authLink" placeholder="Enter your response here">
-        <button id="submitButton">Submit</button>
+<body id="responsive-main-nav1">
+    <div class="main container-fluid">
+        <header role="banner" class="main-header">
+            <div class="container">
+                <div class="row">
+                    <img src="{{url_for('static', filename='ic-logo.svg')}}">
+                </div>
+            </div>
+        </header>
+        <div role="main" class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1>QTSP Authentication</h1>
+                    <div id="content" class="content-wrap1 content-center col-md-11 col-sm-11">
+                        <div class="genericErrors" id="genericErrorsDesc"></div>
+
+                        <div>
+                            <button id="fetchButton">Get Access Token</button>
+                            
+                        </div>
+                        
+
+                        <!-- Container to hold the input box -->
+                        <div id="inputContainer">
+                            <p id="result">Placeholder for the EUDI Wallet link</p>
+                            <p id="description">After authorization the wallet will redirect to a link. Introduce link redirect to in the input box below.</p>
+                            <input type="text" id="authLink" placeholder="Enter your response here">
+                            <button id="submitButton">Submit</button>
+                        </div>
+
+                        <div id="AccessTokenDiv">
+                            <p id="accesstoken">Placeholder for the access token</p>
+                            <button id="credentialsPage">Move to CredentialsPage</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <p id="accesstoken">Placeholder for the access token</p>
 
-    <button id="createcredentialsButton">Create Credentials Temporary</button>
-    <button id="credentialsPage">Move to CredentialsPage</button>
-    <button id="skipButton">Move to Signature Page</button>
 
     <script>
         let cookie_status;
+
+        document.getElementById('inputContainer').hidden = true;
+        document.getElementById('AccessTokenDiv').hidden = true;
         
         document.getElementById('fetchButton').addEventListener('click', function() {
-            // Replace 'your-endpoint-url' with the actual URL of your endpoint
-            fetch('{{redirect_url}}service_authorization') // Example endpoint for demonstration
-                .then(response => response.json()) // Get the response as a string
+            document.getElementById('inputContainer').hidden = false;
+            fetch('{{redirect_url}}service_authorization') 
+                .then(response => response.json())
                 .then(data => {
                     console.log("1:"+data["location"]);
                     console.log("2:"+data["cookie"]);
                     cookie_status = data["cookie"];
-                    document.getElementById('result').textContent = data["location"]; // Display the returned string
+                    document.getElementById('result').textContent = "Redirect to Wallet: "+data["location"]; // Display the returned string
+                    document.getElementById('inputContainer').hidden = false;
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     document.getElementById('result').textContent = 'An error occurred while fetching data.';
+                    document.getElementById('inputContainer').hidden = false;
                 });
         });
 
         document.getElementById('submitButton').addEventListener('click', function(){
+            document.getElementById("AccessTokenDiv").hidden = false;
+
             const userInput = document.getElementById('authLink').value;
             console.log(userInput);
             fetch('{{redirect_url}}service_authorization_link', {
@@ -56,16 +117,13 @@
             .then(response => response.json()) // Get the response as a string
             .then(data => {
                 console.log(data);   
-                document.getElementById('accesstoken').textContent = data;
+                document.getElementById('accesstoken').textContent = data["access_token"];
+                document.getElementById("AccessTokenDiv").hidden = false;
             }) 
             .catch(error => {
                 console.error('Error:', error);
             });
         });
-
-        document.getElementById('createcredentialsButton').addEventListener('click', function(){
-            fetch("{{redirect_url}}createcredentials");
-        })
 
         document.getElementById('credentialsPage').addEventListener('click', function(){
             window.location.href = "{{redirect_url}}credentials_page";
@@ -76,4 +134,5 @@
         })
     </script>
 </body>
+
 </html>

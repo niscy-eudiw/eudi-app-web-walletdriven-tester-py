@@ -20,6 +20,8 @@
 
     <button id="sign">Sign</button>
 
+    <p id="placeholder_documents_sign">Placeholder for the signed document</p>
+
     <script>
         let cookie_status = "{{cookie}}";
         console.log(cookie_status);
@@ -39,7 +41,7 @@
             .then(response => response.json()) // Get the response as a string
             .then(data => {
                 console.log(data);   
-                document.getElementById('accesstoken').textContent = data;
+                document.getElementById('accesstoken').textContent = data["access_token"];
             }) 
             .catch(error => {
                 console.error('Error:', error);
@@ -47,7 +49,12 @@
         });
 
         document.getElementById('sign').addEventListener('click', function(){
-            fetch("{{redirect_url}}upload_document");
+            fetch("{{redirect_url}}upload_document")
+            .then(response => {
+                response.text().then(text => {
+                    document.getElementById("placeholder_documents_sign").textContent = text;
+                })
+            });
         })
     </script>
 </body>
