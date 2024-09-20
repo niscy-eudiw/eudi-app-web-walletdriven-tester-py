@@ -16,7 +16,7 @@
 #
 ###############################################################################
 """
-This SCA_routes.py file is the blueprint of the Wallet service.
+This SCA_routes.py file is the blueprint of the Web Wallet Driven Tester service.
 """
 
 import base64
@@ -105,7 +105,7 @@ sca.template_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '
             
 
 #     return render_template('metadata_form.html', attributes=attributes_req, optional=optional)
-@sca.route('/select_pdf', methods=['GET','POST'])
+@sca.route('/select_document', methods=['GET','POST'])
 def select_pdf():
 
     return render_template('pdf.html', redirect_url= cfgserv.service_url)
