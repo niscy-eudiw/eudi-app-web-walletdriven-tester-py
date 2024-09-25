@@ -31,12 +31,12 @@ class ConfService:
     secret_key = "secret_key"
 
     service_url = "http://127.0.0.1:5000/"
-    #service_url = "https://tester.relyingparty.eudiw.dev/"
 
     metadata_supported_credentials_url="https://issuer.eudiw.dev/.well-known//openid-credential-issuer"
 
-    QTSP_url="https://walletcentric.signer.eudiw.dev"
-    SCA="https://walletcentric.signer.eudiw.dev"
+    AS="http://localhost:8084"
+    RS="http://localhost:8085"
+    SCA="http://localhost:8086"
 
     credentials_not_supported=[
         # "eu.europa.ec.eudiw.loyalty_mdoc",

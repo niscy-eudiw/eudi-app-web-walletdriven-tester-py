@@ -61,6 +61,7 @@ def select_pdf():
 def credential_page():
     return render_template('credentials.html', redirect_url= cfgserv.service_url) 
  
+# Requests to the backend servers
 @sca.route('/upload_document', methods=['GET','POST'])
 def upload_document():
 
@@ -90,7 +91,7 @@ def upload_document():
             "container": container
         }],
         "hashAlgorithmOID": "2.16.840.1.101.3.4.2.1",
-        "request_uri":"https://walletcentric.signer.eudiw.dev",
+        "request_uri":cfgserv.RS,
         "signature_date": date,
         "clientData": "12345678"
     }
@@ -99,7 +100,7 @@ def upload_document():
 
     #return payload
     #return jsonify(payload)
-    response = requests.request("POST", "https://walletcentric.signer.eudiw.dev/signatures/signDoc" , headers=headers, data=json.dumps(payload))
+    response = requests.request("POST", cfgserv.SCA+"/signatures/signDoc" , headers=headers, data=json.dumps(payload))
     print(response.json()["documentWithSignature"][0])
     
     bytes = b64decode(response.json()["documentWithSignature"][0], validate=True)
@@ -135,7 +136,7 @@ def service_authorization():
         "state": "12345678"
     }
     
-    uri = "https://walletcentric.signer.eudiw.dev/oauth2/authorize"
+    uri = cfgserv.AS+"/oauth2/authorize"
     response = requests.get(url = uri, params = params, allow_redirects = False)
 
     # get location to redirect & cookie returned
@@ -155,11 +156,8 @@ def continue_authentication():
     
     link = request.get_json().get("link")
     print(link)
-    cookie = request.get_json().get("cookie")
-    print(cookie)
     
-    header = {"Cookie": cookie}
-    response = requests.get(url = link, headers = header)
+    response = requests.get(url = link)
     
     global service_access_token
     service_access_token = response.json()
@@ -197,7 +195,7 @@ def oauth_login_code():
     authorization_basic = authorization_value(client_id, client_secret)
     headers_a = {'Authorization': authorization_basic}
     
-    uri =  "https://walletcentric.signer.eudiw.dev/oauth2/token"
+    uri =  cfgserv.AS+"/oauth2/token"
     response = requests.post(url = uri, params = params, headers = headers_a, allow_redirects = False)
     print(response.json())
     return response.json()
@@ -235,12 +233,12 @@ def authorization_credential():
             "container": container
         }],
         "hashAlgorithmOID":"2.16.840.1.101.3.4.2.1",
-        "authorizationServerUrl":"https://walletcentric.signer.eudiw.dev",
-        "resourceServerUrl":"https://walletcentric.signer.eudiw.dev",
+        "authorizationServerUrl": cfgserv.AS,
+        "resourceServerUrl": cfgserv.RS,
         "clientData": "12345678"
     }
     
-    uri = "https://walletcentric.signer.eudiw.dev/credential/authorize"
+    uri = cfgserv.SCA+"/credential/authorize"
     response = requests.get(url = uri, headers=headers, data=json.dumps(payload), allow_redirects = False)
     print(response.json())
     
@@ -252,9 +250,6 @@ def authorization_credential():
     print(date_l)
     global date
     date = date_l
-
-    # show location
-    response_json = {"location": location, "cookie": cookie}
     
     return render_template('signature_pdf.html', redirect_url=cfgserv.service_url, location=location, cookie=cookie)
     
@@ -271,7 +266,7 @@ def credentials_list():
         "certInfo": "true"
     })
 
-    uri =  "https://walletcentric.signer.eudiw.dev/csc/v2/credentials/list"
+    uri =  cfgserv.RS+"/csc/v2/credentials/list"
     response = requests.post(url = uri, data=payload, headers = headers_a, allow_redirects = False)
     print(response)
     return response.json()
