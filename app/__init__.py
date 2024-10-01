@@ -56,7 +56,6 @@ def handle_exception(e):
     )
 
 def page_not_found(e):
-
     return (
         render_template(
             "500.html",
@@ -66,9 +65,7 @@ def page_not_found(e):
         404,
     )
 
-
 def create_app():
-
     app = Flask(__name__, instance_relative_config=True)
     app.config['SECRET_KEY'] = ConfService.secret_key
 
@@ -88,5 +85,4 @@ def create_app():
 
     # CORS is a mechanism implemented by browsers to block requests from domains other than the server's one.
     CORS(app, supports_credentials=True)
-
     return app

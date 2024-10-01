@@ -1,0 +1,22 @@
+{% extends 'index.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <h1>QTSP Authentication</h1>
+        <div id="content" class="content-wrap1 content-center col-md-11 col-sm-11">
+            <div class="genericErrors" id="genericErrorsDesc"></div>
+            <h2>Successful Authentication</h2>
+            <label>Access Token:</label>
+            <p id="accesstoken" style="word-wrap: break-word;">Placeholder for the access token</p>
+            <button id="move_credential_page">Continue to CredentialsPage</button>
+        </div>
+    </div>
+</div>
+<script>
+    document.getElementById('accesstoken').textContent = "{{access_token_value}}";
+    document.getElementById('move_credential_page').addEventListener('click', function(){
+        window.location.href = "{{redirect_url}}credentials_page";
+    })
+</script>
+{% endblock %}
