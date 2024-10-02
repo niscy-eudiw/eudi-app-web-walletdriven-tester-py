@@ -28,14 +28,14 @@ from flask import  session
 class ConfService:
     secret_key = "secret_key"
 
-    service_url = "http://127.0.0.1:5000/"
+    service_url = "http://127.0.0.1:5000/tester/"
     AS="http://localhost:8084"
     RS="http://localhost:8085"
     SCA="http://localhost:8086"
     
-    oauth_client_id = "wallet-client"
-    oauth_client_secret = "somesecret2"
-    oauth_redirect_uri = "http://127.0.0.1:5000/oauth/login/code"
+    client_id = "wallet-client"
+    client_secret = "somesecret2"
+    redirect_uri = "http://127.0.0.1:5000/tester/oauth/login/code"
 
     alg_oid={
         "SHA256":"1.2.840.113549.1.1.11",

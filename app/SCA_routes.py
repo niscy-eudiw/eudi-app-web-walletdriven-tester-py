@@ -15,9 +15,6 @@
 # limitations under the License.
 #
 ###############################################################################
-"""
-This SCA_routes.py file is the blueprint of the Web Wallet Driven Tester service.
-"""
 
 import base64
 import json
@@ -153,7 +150,7 @@ def setCredentialId():
     print(credentialChosen)
     return "success"
 
-@sca.route('/tester/select_pdf', methods=['GET','POST'])
+@sca.route('/tester/select_document', methods=['GET','POST'])
 def select_pdf():
     return render_template('pdf.html', redirect_url= cfgserv.service_url)
 
