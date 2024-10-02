@@ -1,56 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="Title" content="QTSP Authentication" />
-    <meta name="robots" content="noindex, nofollow" />
-    <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <!--<link rel="icon" href="https://walletcentric.signer.eudiw.dev/tester/static/images/favicon.gif" type="image/gif" />
-    <link href="https://walletcentric.signer.eudiw.dev/tester/static/bootstrap-3.4.1-dist/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <link href="https://walletcentric.signer.eudiw.dev/tester/static/css/stylesheets/custom/custom_en_9.7.1.20.1679559965505.css" media="all" rel="stylesheet" type="text/css" />
-    <link href="https://walletcentric.signer.eudiw.dev/tester/static/fontawesome-free-5.15.4-web/css/fontawesome.min.css" rel="stylesheet" type="text/css" />
-    <script type="text/javascript" id="jqueryId" src="https://walletcentric.signer.eudiw.dev/tester/static/scripts/jquery/jquery-3.6.3.min.js" charset="UTF-8"></script>
-    <script type="text/javascript" src="https://walletcentric.signer.eudiw.dev/tester/static/scripts/promiz/promiz-1.0.6.js" charset="UTF-8"></script>
-    <script type="text/javascript" src="https://walletcentric.signer.eudiw.dev/tester/static/bootstrap-3.4.1-dist/js/bootstrap.min.js" charset="UTF-8" defer="true"></script>
-    <script type="text/javascript" src="https://walletcentric.signer.eudiw.dev/tester/static/scripts/html5shiv/html5shiv-3.7.3.js" charset="UTF-8"></script>
-    <script type="text/javascript" src="https://walletcentric.signer.eudiw.dev/tester/static/scripts/respond/respond-1.4.2.js" charset="UTF-8"></script>
-    <meta name="referrer" content="no-referrer">
-    <script type="text/javascript" src="https://walletcentric.signer.eudiw.dev/tester/static/scripts/loc/loc_en_9.7.1.20.1679559965505.js" charset="UTF-8"></script>-->
-    
-    <link rel="icon" href="http://127.0.0.1:5000/static/images/favicon.gif" type="image/gif" />
-    <link rel="stylesheet" href="http://127.0.0.1:5000/static/bootstrap-3.4.1-dist/css/bootstrap.min.css" type="text/css" />
-    <link rel="stylesheet" href="http://127.0.0.1:5000/static/css/stylesheets/custom/custom_en_9.7.1.20.1679559965505.css" media="all" type="text/css" />
-    <link rel="stylesheet" href="http://127.0.0.1:5000/static/fontawesome-free-5.15.4-web/css/fontawesome.min.css" type="text/css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <script type="text/javascript" id="jqueryId" src="http://127.0.0.1:5000/static/scripts/jquery/jquery-3.6.3.min.js" charset="UTF-8"></script>
-    <script type="text/javascript" src="http://127.0.0.1:5000/static/scripts/promiz/promiz-1.0.6.js" charset="UTF-8"></script>
-    <script type="text/javascript" src="http://127.0.0.1:5000/static/bootstrap-3.4.1-dist/js/bootstrap.min.js" charset="UTF-8" defer="true"></script>
-    <script type="text/javascript" src="http://127.0.0.1:5000/static/scripts/html5shiv/html5shiv-3.7.3.js" charset="UTF-8"></script>
-    <script type="text/javascript" src="http://127.0.0.1:5000/static/scripts/respond/respond-1.4.2.js" charset="UTF-8"></script>
-    <meta name="referrer" content="no-referrer">
-    <script type="text/javascript" src="http://127.0.0.1:5000/static/scripts/loc/loc_en_9.7.1.20.1679559965505.js" charset="UTF-8"></script>
-    
+{% extends 'base.html' %}
 
-    <title>QTSP Authentication</title>
-</head>
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <h1>
+            rQES (Wallet Centric)
+        </h1>
+        <div id="content" class="content-wrap1 content-center col-md-11 col-sm-11">
+            <div class="genericErrors" id="genericErrorsDesc"></div>
+            <p>Welcome to the remote Qualified Eletronic Signature component wallet-centric backend server.</p>
+            <p>A Web GUI supporting the same-flow device for tests is available at: <a href="https://walletcentric.signer.eudiw.dev/tester">https://walletcentric.signer.eudiw.dev/tester</a> </p>
+            
+            <p>In this domain, it is made available the SCA Server and the QTSP Server composed by an Authorization Server and Resourse Server.</p>
+        
+            <p> SCA Server Endpoints:
+                <ul>
+                    <li>/credential/authorize</li>
+                    <li>/signatures/signDoc</li>
+                    <li>/credential/oauth/login/code</li>
+                </ul>
+            </p>
+
+            <p> QTSP Server Endpoints:
+                <ul>
+                    <li>
+                        Authorization Server
+                        <ul>
+                            <li>/oauth2/authorize</li>
+                            <li>/oauth2/token</li>
+                            <li>/oid4vp/callback</li>
+                        </ul>
+                    </li>
+                    <li>Resource server
+                        <ul>
+                            <li>/csc/v2/info</li>
+                            <li>/csc/v2/signatures/signHash</li>
+                            <li>/csc/v2/credentials/list</li>
+                            <li>/csc/v2/credentials/info</li>
+                        </ul>
+                    </li>
+                </ul>
+            </p>
 
 
-<body id="responsive-main-nav1">
-    <div class="main container-fluid">
-        <header role="banner" class="main-header">
-            <div class="container">
-                <div class="row"><img src="http://127.0.0.1:5000/static/ic-logo.svg"></div>
-            </div>
-        </header>
-        <div role="main" class="container">
-            <div class="content">{% block content %} {% endblock %}</div>
         </div>
     </div>
-    <script>
-    </script>
-</body>
-
-</html>
+</div>
+{% endblock %}

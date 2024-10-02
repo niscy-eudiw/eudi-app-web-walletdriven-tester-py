@@ -46,13 +46,16 @@ hash = None
 global_file = None
 date = None
 
-# Change HTML Page
 @sca.route('/', methods=['GET', 'POST'])
-def base():
+def index():
+    return render_template('index.html', redirect_url= cfgserv.service_url)
+
+@sca.route('/tester', methods=['GET', 'POST'])
+def authentication():
     return render_template('auth.html', redirect_url= cfgserv.service_url)
 
 # starts the authentication process throught the /oauth2/authorize and receives the link to the wallet
-@sca.route('/service_authorization', methods=['GET','POST'])
+@sca.route('/tester/service_authorization', methods=['GET','POST'])
 def service_authorization():
     
     # generate nonce
@@ -86,7 +89,7 @@ def service_authorization():
     return jsonify(response_json)
 
 # endpoint where the qtsp will be redirected to after authentication
-@sca.route("/oauth/login/code", methods=["GET", "POST"])
+@sca.route("/tester/oauth/login/code", methods=["GET", "POST"])
 def oauth_login_code():
         
     code = request.args.get("code")
@@ -119,11 +122,11 @@ def oauth_login_code():
     
     return render_template('auth_success.html', redirect_url= cfgserv.service_url, access_token_value=access_token)
 
-@sca.route('/credentials_page', methods=['GET', 'POST'])
+@sca.route('/tester/credentials_page', methods=['GET', 'POST'])
 def credential_page():
     return render_template('credential.html', redirect_url= cfgserv.service_url) 
 
-@sca.route("/credentials_list", methods=["GET", "POST"])
+@sca.route("/tester/credentials_list", methods=["GET", "POST"])
 def credentials_list():
     print(service_access_token)
     authorization_header = "Bearer "+service_access_token
@@ -141,18 +144,18 @@ def credentials_list():
     print(response)
     return response.json()
 
-@sca.route("/set_credentialId", methods=["GET", "POST"])
+@sca.route("/tester/set_credentialId", methods=["GET", "POST"])
 def setCredentialId():
     global credentialChosen
     credentialChosen = request.get_json().get("credentialID")
     print(credentialChosen)
     return "success"
 
-@sca.route('/select_pdf', methods=['GET','POST'])
+@sca.route('/tester/select_pdf', methods=['GET','POST'])
 def select_pdf():
     return render_template('pdf.html', redirect_url= cfgserv.service_url)
 
-@sca.route("/authorization_credential", methods=["GET", "POST"])
+@sca.route("/tester/authorization_credential", methods=["GET", "POST"])
 def authorization_credential():
     print("initial token: "+"Bearer "+service_access_token)
     
@@ -214,7 +217,7 @@ def authorization_credential():
     date = date_l
     return render_template('credential_authorization.html', redirect_url=cfgserv.service_url, location=location)
 
-@sca.route("/oauth/credential/login/code", methods=["GET", "POST"])
+@sca.route("/tester/oauth/credential/login/code", methods=["GET", "POST"])
 def oauth_credential_login_code():
     
     access_token_form = request.form["access_token"]    
@@ -228,7 +231,7 @@ def oauth_credential_login_code():
     return render_template('credential_authorization_success.html', redirect_url=cfgserv.service_url, access_token_value=credential_access_token)
 
 # Requests to the backend servers
-@sca.route('/upload_document', methods=['GET','POST'])
+@sca.route('/tester/upload_document', methods=['GET','POST'])
 def upload_document():
     form = form_global
     container=form["container"]
