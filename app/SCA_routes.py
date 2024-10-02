@@ -15,6 +15,9 @@
 # limitations under the License.
 #
 ###############################################################################
+"""
+This SCA_routes.py file is the blueprint of the Web Wallet Driven Tester service.
+"""
 
 import base64
 import json
@@ -57,7 +60,6 @@ def authentication():
 # starts the authentication process throught the /oauth2/authorize and receives the link to the wallet
 @sca.route('/tester/service_authorization', methods=['GET','POST'])
 def service_authorization():
-    
     # generate nonce
     global code_verifier
     code_verifier = secrets.token_urlsafe(32)
