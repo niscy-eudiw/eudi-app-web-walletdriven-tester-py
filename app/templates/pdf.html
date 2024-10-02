@@ -1,162 +1,98 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no" />
-    <meta name="Title" content="Request Credentials" />
-    <meta name="Keywords" content="EUDI Wallet, Credentials, Enrolment" />
-    <meta name="Description" content="Request Credentials for EUDI Wallet" />
-    <meta name="robots" content="noindex, nofollow" />
-    <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}"
-        type="image/vnd.microsoft.icon" />
-    <link rel="icon" href="{{ url_for('static', filename='images/favicon.gif') }}" type="image/gif" />
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}" />
-    <link href="{{ url_for('static', filename='bootstrap-3.4.1-dist/css/bootstrap.min.css') }}" rel="stylesheet"
-        type="text/css" />
-    <link href="{{ url_for('static', filename='css/stylesheets/custom/custom_en_9.7.1.20.1679559965505.css') }}"
-        media="all" rel="stylesheet" type="text/css" />
-    <link href="{{ url_for('static', filename='fontawesome-free-5.15.4-web/css/fontawesome.min.css') }}"
-        rel="stylesheet" type="text/css" />
-    <script type="text/javascript" id="jqueryId"
-        src="{{ url_for('static', filename='scripts/jquery/jquery-3.6.3.min.js') }}" charset="UTF-8"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='scripts/promiz/promiz-1.0.6.js') }}"
-        charset="UTF-8"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='bootstrap-3.4.1-dist/js/bootstrap.min.js') }}"
-        charset="UTF-8" defer="true"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='scripts/html5shiv/html5shiv-3.7.3.js') }}"
-        charset="UTF-8"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='scripts/respond/respond-1.4.2.js') }}"
-        charset="UTF-8"></script>
-    <meta name="referrer" content="no-referrer">
-    <script type="text/javascript"
-        src="{{ url_for('static', filename='scripts/loc/loc_en_9.7.1.20.1679559965505.js') }}" charset="UTF-8"></script>
-    <title>Receive PDF</title>
-</head>
-
-<body id="responsive-main-nav1">
-    <div class="main container-fluid">
-        <header role="banner" class="main-header">
-            <div class="container">
-                <div class="row">
-                    <img src="{{url_for('static', filename='ic-logo.svg')}}">
-                </div>
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <h1>Wallet Test</h1>
+        <div id="content" class="content-wrap1 content-center col-md-11 col-sm-11">
+            <div class="genericErrors" id="genericErrorsDesc">
             </div>
-        </header>
-        <div role="main" class="container">
-            <div class="row">
-                <div class="col-lg-12">
-                    <h1>Wallet Test</h1>
-                    <div id="content" class="content-wrap1 content-center col-md-11 col-sm-11">
-                        <div class="genericErrors" id="genericErrorsDesc">
-                        </div>
-                        <h3>Step 1: Choose pdf document</h3>
-
-                        <form id="select_document" method="post" action="{{redirect_url}}upload_document"
-                            accept-charset="UTF-8" enctype="multipart/form-data"
-                            autocapitalize="off" spellcheck="false" style="padding-top:6%;">
-
-                            <div class="form-check col-md-12">
-                                <label class="form-check-label" for="flexCheckDefault">
-                                    <input class="form-check-input" type="file" name="upload" id="filename"  />
-                                </label>
-                            </div>
-                            
-                            <iframe id="viewer" frameBorder="0" scrolling="auto" height="500px" width="100%" type="application/pdf"></iframe>
-                            
-                            <div class="col-md-12">
-                                <h3 >Container</h3>
-                                <div class="form-group">
-                                    <label class="radio-inline ">
-                                        <input type="radio" id="No" name="container" value="No" style="transform:scale(1.5)" checked> No
-                                    </label>
-                                    <label class="radio-inline">
-                                        <input type="radio" id="ASiC-S" name="container" value="ASiC-S" style="transform:scale(1.5)"> ASiC-S
-                                    </label>
-                                    <label class="radio-inline">
-                                        <input type="radio" id="ASiC-E" name="container" value="ASiC-E" style="transform:scale(1.5)"> ASiC-E
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="col-md-12">
-                                <h3 >Signature format</h3>
-                                <div class="form-group">
-                                    <label class="radio-inline ">
-                                        <input type="radio" id="XAdES" name="signature_format" value="XAdES" style="transform:scale(1.5)" required> XAdES
-                                    </label>
-                                    <label class="radio-inline">
-                                        <input type="radio" id="CAdES" name="signature_format" value="CAdES" style="transform:scale(1.5)"> CAdES
-                                    </label>
-                                    <label class="radio-inline">
-                                        <input type="radio" id="PAdES" name="signature_format" value="PAdES" style="transform:scale(1.5)"> PAdES
-                                    </label>
-                                    <label class="radio-inline">
-                                        <input type="radio" id="JAdES" name="signature_format" value="JAdES" style="transform:scale(1.5)"> JAdES
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-12">
-                                <h3 >Packaging</h3>
-                                <div class="form-group">
-                                    <label class="radio-inline ">
-                                        <input type="radio" id="enveloped" name="packaging" value="ENVELOPED" style="transform:scale(1.5)" disabled required > 
-                                        Enveloped                                        
-                                    </label>
-                                    <label class="radio-inline">
-                                        <input type="radio" id="enveloping" name="packaging" value="ENVELOPING" style="transform:scale(1.5)" disabled> Enveloping                                        
-                                    </label>
-                                    <label class="radio-inline">
-                                        <input type="radio" id="detached" name="packaging" value="DETACHED" style="transform:scale(1.5)" disabled> Detached
-                                    </label>
-                                    <label class="radio-inline">
-                                        <input type="radio" id="internally" name="packaging" value="INTERNALLY_DETACHED" style="transform:scale(1.5)" disabled> Internally detached
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="col-md-12">
-                                <h3 >Level</h3>
-
-                                <select id="select" class="form-control" name="level">
-
-                                </select>
-
-                            </div>
-
-                            <div class="col-md-12">
-                                <h3 >Digest algorithm</h3>
-                                <div class="form-group">
-                                    <label class="radio-inline ">
-                                        <input type="radio" id="inlineCheckbox1" name="algorithm" value="SHA256" style="transform:scale(1.5)" checked> 
-                                        SHA256                                        
-                                    </label>
-                                    <label class="radio-inline">
-                                        <input type="radio" id="inlineCheckbox2" name="algorithm" value="SHA384" style="transform:scale(1.5)"> SHA384                                       
-                                    </label>
-                                    <label class="radio-inline">
-                                        <input type="radio" id="inlineCheckbox3" name="algorithm" value="SHA512" style="transform:scale(1.5)"> SHA512
-                                    </label>
-                                </div>
-                            </div>
-
-                            <span class="more-submit">
-                                <input type="submit" name="proceed" accesskey="S" value="Next" class="btn btn-primary"
-                                    title="Submit" id="btncheck" disabled>
-                            </span>
-                        </form>
-
+            <h3>Step 1: Choose pdf document</h3>
+            <form id="select_document" method="post" action="{{redirect_url}}authorization_credential"
+                accept-charset="UTF-8" enctype="multipart/form-data"
+                autocapitalize="off" spellcheck="false" style="padding-top:6%;">
+                <div class="form-check col-md-12">
+                    <label class="form-check-label" for="flexCheckDefault">
+                        <input class="form-check-input" type="file" name="upload" id="filename"  />
+                    </label>
+                </div>
+                <iframe id="viewer" frameBorder="0" scrolling="auto" height="500px" width="100%" type="application/pdf"></iframe>
+                <div class="col-md-12">
+                    <h3 >Container</h3>
+                    <div class="form-group">
+                        <label class="radio-inline ">
+                            <input type="radio" id="No" name="container" value="No" style="transform:scale(1.5)" checked> No
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="ASiC-S" name="container" value="ASiC-S" style="transform:scale(1.5)"> ASiC-S
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="ASiC-E" name="container" value="ASiC-E" style="transform:scale(1.5)"> ASiC-E
+                        </label>
                     </div>
-
                 </div>
-            </div>
+                <div class="col-md-12">
+                    <h3 >Signature format</h3>
+                    <div class="form-group">
+                        <label class="radio-inline ">
+                            <input type="radio" id="XAdES" name="signature_format" value="XAdES" style="transform:scale(1.5)" required> XAdES
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="CAdES" name="signature_format" value="CAdES" style="transform:scale(1.5)"> CAdES
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="PAdES" name="signature_format" value="PAdES" style="transform:scale(1.5)"> PAdES
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="JAdES" name="signature_format" value="JAdES" style="transform:scale(1.5)"> JAdES
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <h3 >Packaging</h3>
+                    <div class="form-group">
+                        <label class="radio-inline ">
+                            <input type="radio" id="enveloped" name="packaging" value="ENVELOPED" style="transform:scale(1.5)" disabled required > 
+                            Enveloped                                        
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="enveloping" name="packaging" value="ENVELOPING" style="transform:scale(1.5)" disabled> Enveloping                                        
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="detached" name="packaging" value="DETACHED" style="transform:scale(1.5)" disabled> Detached
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="internally" name="packaging" value="INTERNALLY_DETACHED" style="transform:scale(1.5)" disabled> Internally detached
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <h3 >Level</h3>
+                    <select id="select" class="form-control" name="level"></select>
+                </div>
+                <div class="col-md-12">
+                    <h3 >Digest algorithm</h3>
+                    <div class="form-group">
+                        <label class="radio-inline ">
+                            <input type="radio" id="inlineCheckbox1" name="algorithm" value="2.16.840.1.101.3.4.2.1" style="transform:scale(1.5)" checked> 
+                            SHA256                                        
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="inlineCheckbox2" name="algorithm" value="2.16.840.1.101.3.4.2.2" style="transform:scale(1.5)"> SHA384                                       
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="inlineCheckbox3" name="algorithm" value="2.16.840.1.101.3.4.2.3" style="transform:scale(1.5)"> SHA512
+                        </label>
+                    </div>
+                </div>
+                <span class="more-submit">
+                    <input type="submit" name="proceed" accesskey="S" value="Next" class="btn btn-primary"
+                        title="Submit" id="btncheck" disabled>
+                </span>
+            </form>
         </div>
     </div>
-    <!-- Version 9.7.1.20 - 23/03/2023 - 09:26 -->
-</body>
+</div>
 
 <script type="text/javascript">
 
@@ -308,25 +244,12 @@
         input.addEventListener('change',(event)=>{
             let input = event.target;
             let path = input.value;
-
-            // if(path.includes('.pdf') == false){
-            //     alert(" File Not Type [.pdf]");
-                
-            //     return false
-            // }
-
             let file = input.files[0];
             console.log(URL.createObjectURL(file))
-            
             console.log("sucess")
             var fileURL= URL.createObjectURL(file);
             document.getElementById('viewer').src = fileURL
-            document.getElementById('btncheck').disabled= false
-                    
-                
+            document.getElementById('btncheck').disabled= false 
         });
-
-    
 </script>
-
-</html>
+{% endblock %}

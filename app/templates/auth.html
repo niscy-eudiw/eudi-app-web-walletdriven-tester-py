@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <h1>QTSP Authentication</h1>
+        <div id="content" class="content-wrap1 content-center col-md-11 col-sm-11">
+            <div class="genericErrors" id="genericErrorsDesc"></div>
+            <button id="fetchButton">Get Access Token</button>
+            <div id="inputContainer">
+                <a id="link_to_wallet">Go to EUDI Wallet</a>
+            </div>
+            <div id="temp">
+                <p id="result">Placeholder for the EUDI Wallet link</p>
+                <p id="description">After authorization the wallet will redirect to a link. Introduce link redirect to in the input box below.</p>
+                <input type="text" id="authLink" placeholder="Enter your response here">
+                <button id="submitButton">Submit Text</button>
+                <a id="link_to_continue">Continue</a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.getElementById('inputContainer').hidden = true;
+    document.getElementById('temp').hidden = true;
+    document.getElementById('link_to_continue').hidden = true;
+
+    document.getElementById('fetchButton').addEventListener('click', function() {
+        fetch('{{redirect_url}}service_authorization') 
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('link_to_wallet').href = data["location"];
+                document.getElementById('result').textContent=data["location"];
+                document.getElementById('inputContainer').hidden = false;
+                document.getElementById('temp').hidden = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('result').textContent = 'An error occurred while fetching data.';
+                document.getElementById('inputContainer').hidden = false;
+            });
+    });
+    document.getElementById('submitButton').addEventListener('click', function(){
+        const userInput = document.getElementById('authLink').value;
+        document.getElementById('link_to_continue').href = userInput;
+        document.getElementById('link_to_continue').hidden = false;
+    });
+
+</script>
+{% endblock %}
