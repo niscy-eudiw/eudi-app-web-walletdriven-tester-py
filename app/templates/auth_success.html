@@ -16,7 +16,7 @@
 <script>
     document.getElementById('accesstoken').textContent = "{{access_token_value}}";
     document.getElementById('move_credential_page').addEventListener('click', function(){
-        window.location.href = "{{redirect_url}}credentials_page";
+        window.location.href = "{{redirect_url}}/credentials_page";
     })
 </script>
 {% endblock %}

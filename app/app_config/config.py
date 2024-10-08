@@ -16,26 +16,20 @@
 #
 ###############################################################################
 """
-This config.py contains configuration data for the age-over-poc Web service. 
-
-NOTE: You should only change it if you understand what you're doing.
+This config.py contains configuration data.
 """
-
-import logging
-from logging.handlers import TimedRotatingFileHandler
-from flask import  session
 
 class ConfService:
     secret_key = "secret_key"
 
-    service_url = "http://127.0.0.1:5000/tester/"
+    service_url = "http://127.0.0.1:5000/tester"
     AS="http://localhost:8084"
     RS="http://localhost:8085"
     SCA="http://localhost:8086"
     
-    client_id = "wallet-client"
-    client_secret = "somesecret2"
-    redirect_uri = "http://127.0.0.1:5000/tester/oauth/login/code"
+    oauth_client_id = "wallet-client"
+    oauth_client_secret = "somesecret2"
+    oauth_redirect_uri = "http://127.0.0.1:5000/tester/oauth/login/code"
 
     alg_oid={
         "SHA256":"1.2.840.113549.1.1.11",

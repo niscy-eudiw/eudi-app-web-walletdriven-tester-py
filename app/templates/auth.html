@@ -6,7 +6,7 @@
         <h1>QTSP Authentication</h1>
         <div id="content" class="content-wrap1 content-center col-md-11 col-sm-11">
             <div class="genericErrors" id="genericErrorsDesc"></div>
-            <button id="fetchButton">Get Access Token</button>
+            <button id="fetchButton" onclick="serviceAuthentication()">Get Access Token</button>
             <div id="inputContainer">
                 <a id="link_to_wallet">Go to EUDI Wallet</a>
             </div>
@@ -25,21 +25,36 @@
     document.getElementById('temp').hidden = true;
     document.getElementById('link_to_continue').hidden = true;
 
-    document.getElementById('fetchButton').addEventListener('click', function() {
-        fetch('{{redirect_url}}service_authorization') 
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('link_to_wallet').href = data["location"];
-                document.getElementById('result').textContent=data["location"];
-                document.getElementById('inputContainer').hidden = false;
-                document.getElementById('temp').hidden = false;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('result').textContent = 'An error occurred while fetching data.';
-                document.getElementById('inputContainer').hidden = false;
-            });
-    });
+    async function serviceAuthentication() {
+        const response = await fetch('{{redirect_url}}/service_authorization');
+
+        if(response.ok){
+            data = response.json()
+                .then(
+                    d => {
+                        console.log(d);
+                        if (d && d["location"]) {
+                            document.getElementById('link_to_wallet').href = d["location"];
+                            document.getElementById('result').textContent=d["location"];
+                            document.getElementById('inputContainer').hidden = false;
+                            document.getElementById('temp').hidden = false;
+                        } else {
+                            console.error('Expected "location" key in the response');
+                            document.getElementById("genericErrorsDesc").textContent = "Url to wallet not found.";
+                        }
+                    }
+                );
+        }
+        else{
+            data = response.text()
+                .then(message => {
+                    console.log(message);
+                    document.getElementById("genericErrorsDesc").textContent = message;
+                }
+            )
+        }
+    }
+
     document.getElementById('submitButton').addEventListener('click', function(){
         const userInput = document.getElementById('authLink').value;
         document.getElementById('link_to_continue').href = userInput;

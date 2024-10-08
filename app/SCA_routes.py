@@ -19,15 +19,17 @@
 import base64
 import json
 import os
+import mimetypes
 from flask import (
     Blueprint,
     render_template,
     request,
     jsonify,
+    session
 )
+import jwt
 import requests
-
-# from . import oidc_metadata
+from werkzeug.utils import secure_filename
 import base64
 import secrets
 import hashlib
@@ -36,15 +38,7 @@ from app_config.config import ConfService as cfgserv
 sca = Blueprint("SCA", __name__, url_prefix="/")
 
 sca.template_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template/')
-
-code_verifier = None
-service_access_token = None
-credential_access_token = None
-credentialChosen = None
-form_global = None
-hash = None
-global_file = None
-date = None
+UPLOAD_FOLDER = 'documents'
 
 @sca.route('/', methods=['GET', 'POST'])
 def index():
@@ -58,10 +52,9 @@ def authentication():
 @sca.route('/tester/service_authorization', methods=['GET','POST'])
 def service_authorization():
     # generate nonce
-    global code_verifier
-    code_verifier = secrets.token_urlsafe(32)
+    session["code_verifier"] = secrets.token_urlsafe(32)
     code_challenge_method = "S256"
-    code_challenge_bytes = hashlib.sha256(code_verifier.encode()).digest()
+    code_challenge_bytes = hashlib.sha256(session["code_verifier"].encode()).digest()
     code_challenge = base64.urlsafe_b64encode(code_challenge_bytes).decode()
     
     # format url-encoded request
@@ -77,77 +70,94 @@ def service_authorization():
     }
     uri = cfgserv.AS+"/oauth2/authorize"
     response = requests.get(url = uri, params = params, allow_redirects = False)
-
+    
     # get location to redirect & cookie returned
+    print(response.status_code)
     print(response.headers)
-    location = response.headers.get("Location")
-    print(location)
-
-    # show location
-    response_json = {"location": location}
-    return jsonify(response_json)
+    if(response.status_code == 400):
+        session.pop("code_verifier")
+        message = response.json()["message"]
+        return message, 400
+    else:
+        location = response.headers.get("Location")
+        print(location)
+        if location.startswith("eudi-openid4vp"):        
+            response_json = {"location": location}
+            return jsonify(response_json)
+        else:
+            response = requests.get(url=location)
+            return response.text, 400
 
 # endpoint where the qtsp will be redirected to after authentication
 @sca.route("/tester/oauth/login/code", methods=["GET", "POST"])
 def oauth_login_code():
-        
     code = request.args.get("code")
     state = request.args.get("state")
+    error = request.args.get("error")
+    error_description=request.args.get("error_description")
     
     # Print the parameters to the console (or handle them as needed)
     print(f"Code: {code}")
     print(f"State: {state}")
+    print(f"Error: {error}")
+    print(f"Error Description: {error_description}")
     
-    params = {
-        "grant_type":"authorization_code",
-        "code": code,
-        "client_id": cfgserv.oauth_client_id,
-        "redirect_uri": cfgserv.oauth_redirect_uri,
-        "code_verifier": code_verifier
-    }
-    
+    if(code != None):
+        params = {
+            "grant_type":"authorization_code",
+            "code": code,
+            "client_id": cfgserv.oauth_client_id,
+            "redirect_uri": cfgserv.oauth_redirect_uri,
+            "code_verifier": session["code_verifier"]
+        }
+        return executeOAuth2TokenRequest(params=params)
+    else:
+        # session.pop("code_verifier")
+        return error_description
+
+def executeOAuth2TokenRequest(params):
+    uri =  cfgserv.AS+"/oauth2/token"
+        
     authorization_basic = authorization_value(cfgserv.oauth_client_id, cfgserv.oauth_client_secret)
     headers_a = {'Authorization': authorization_basic}
     
-    uri =  cfgserv.AS+"/oauth2/token"
     response = requests.post(url = uri, params = params, headers = headers_a, allow_redirects = False)
-    
     print(response.json())
-    access_token = response.json()["access_token"]
+    print(response.status_code)
     
-    global service_access_token
-    service_access_token = access_token    
-    print("access token: "+service_access_token)
+    if(response.status_code == 400):
+        error = response.json()["error"]
+        error_description = response.json()["error_description"]
+        return error_description
+    elif(response.status_code == 200):
+        access_token = response.json()["access_token"]
+        jwt.decode(access_token, options={"verify_signature": False})
+        session["service_access_token"] = access_token
+        print("access token: "+access_token)
+        return render_template('auth_success.html', redirect_url= cfgserv.service_url, access_token_value=access_token)
     
-    return render_template('auth_success.html', redirect_url= cfgserv.service_url, access_token_value=access_token)
-
 @sca.route('/tester/credentials_page', methods=['GET', 'POST'])
 def credential_page():
     return render_template('credential.html', redirect_url= cfgserv.service_url) 
 
 @sca.route("/tester/credentials_list", methods=["GET", "POST"])
 def credentials_list():
-    print(service_access_token)
-    authorization_header = "Bearer "+service_access_token
-    print(authorization_header)
+    print(session["service_access_token"])
+    authorization_header = "Bearer "+session["service_access_token"]
     headers_a = {'Content-Type': 'application/json', 'Authorization': authorization_header}
-    
     payload = json.dumps({
         "credentialInfo": "true",
         "certificates": "single",
         "certInfo": "true"
     })
-
     uri =  cfgserv.RS+"/csc/v2/credentials/list"
     response = requests.post(url = uri, data=payload, headers = headers_a, allow_redirects = False)
-    print(response)
     return response.json()
 
 @sca.route("/tester/set_credentialId", methods=["GET", "POST"])
 def setCredentialId():
-    global credentialChosen
-    credentialChosen = request.get_json().get("credentialID")
-    print(credentialChosen)
+    session["credentialChosen"] = request.get_json().get("credentialID")
+    print(session["credentialChosen"])
     return "success"
 
 @sca.route('/tester/select_document', methods=['GET','POST'])
@@ -156,19 +166,16 @@ def select_pdf():
 
 @sca.route("/tester/authorization_credential", methods=["GET", "POST"])
 def authorization_credential():
-    print("initial token: "+"Bearer "+service_access_token)
-    
+    print("Bearer "+session["service_access_token"])
     document = request.files['upload']
-    print(document.filename)
-    print(document.content_type)
-    
-    global global_file
-    global_file = document
+    filename = secure_filename(document.filename)
+    file_path = os.path.join(UPLOAD_FOLDER, filename)
+    document.save(file_path)
+    session["filename"] = file_path
+    document.stream.seek(0)
     
     form_local= request.form
-    
-    global form_global
-    form_global = form_local
+    session["form_global"] = form_local
     
     container=form_local["container"]
     signature_format= form_local["signature_format"]
@@ -177,16 +184,14 @@ def authorization_credential():
     digest_algorithm= form_local["algorithm"]
     print(digest_algorithm)
     base64_pdf= base64.b64encode(document.read()).decode("utf-8")
-    
-    global hash
-    hash = base64_pdf
+    document.stream.seek(0)
     
     headers = {
         "Content-Type": "application/json",
-        'Authorization': "Bearer "+service_access_token,
+        'Authorization': "Bearer "+session["service_access_token"],
     }
     payload = {
-        "credentialID": credentialChosen,
+        "credentialID": session["credentialChosen"],
         "numSignatures": "1",
         "documents":[{
             "document":base64_pdf,
@@ -212,43 +217,43 @@ def authorization_credential():
     date_l = response.json().get("signature_date")
     print(date_l)
     
-    global date
-    date = date_l
+    session["date"] = date_l
     return render_template('credential_authorization.html', redirect_url=cfgserv.service_url, location=location)
 
 @sca.route("/tester/oauth/credential/login/code", methods=["GET", "POST"])
 def oauth_credential_login_code():
-    
     access_token_form = request.form["access_token"]    
     access_token_form_json = json.loads(access_token_form)    
     access_token = access_token_form_json["access_token"]
-    print(access_token)
     
-    global credential_access_token
-    credential_access_token = access_token
-    
-    return render_template('credential_authorization_success.html', redirect_url=cfgserv.service_url, access_token_value=credential_access_token)
+    session["credential_access_token"] = access_token
+    return render_template('credential_authorization_success.html', redirect_url=cfgserv.service_url, access_token_value=access_token)
 
 # Requests to the backend servers
 @sca.route('/tester/upload_document', methods=['GET','POST'])
 def upload_document():
-    form = form_global
+    form = session["form_global"]
     container=form["container"]
     signature_format= form["signature_format"]
     packaging= form["packaging"]
     level= form["level"]
     digest_algorithm= form["algorithm"]
     print(digest_algorithm)
-    base64_pdf= hash
+    
+    file_path = session["filename"]
+    file = open(file_path, "rb")
+    print(os.path.basename(file.name))
+    document_content = file.read()
+    base64_pdf= base64.b64encode(document_content).decode("utf-8")
     headers ={
         "Content-Type": "application/json",
-        'Authorization': "Bearer "+credential_access_token,
+        'Authorization': "Bearer "+session["credential_access_token"],
     }
 
-    print(date)
+    print(session["date"])
 
     payload = {
-        "credentialID": credentialChosen,
+        "credentialID": session["credentialChosen"],
         "documents":[{
             "document":base64_pdf,
             "signature_format":signature_format[0],
@@ -258,24 +263,32 @@ def upload_document():
         }],
         "hashAlgorithmOID": digest_algorithm,
         "request_uri":cfgserv.RS,
-        "signature_date": date,
+        "signature_date": session["date"],
         "clientData": "12345678"
     }
     
     response = requests.request("POST", cfgserv.SCA+"/signatures/signDoc" , headers=headers, data=json.dumps(payload))
-    print(response.json()["documentWithSignature"][0])
-    print(global_file.filename)
-    new_name = add_suffix_to_filename(global_file.filename)
+    #print(response.json()["documentWithSignature"][0])
+    print(os.path.basename(file.name))
+    new_name = add_suffix_to_filename(os.path.basename(file.name))
     print(new_name)    
-    print(global_file.content_type)  
+    mime_type, encoding = mimetypes.guess_type(file.name)
+    print(mime_type)  
         
     response_json = {
         "document_string": response.json()["documentWithSignature"][0], 
         "filename": new_name, 
-        "content_type": global_file.content_type
+        "content_type": mime_type
     }
+    
+    session.pop("date")
+    session.pop("form_global")
+    session.pop("credentialChosen")
+    session.pop("credential_access_token")
+    session.pop("filename")
+    os.remove(file_path)
+    print(session)
     return jsonify(response_json)
-    #return response.json()["documentWithSignature"][0]
     
 def authorization_value(username, password):
     value_to_encode = f"{username}:{password}"
