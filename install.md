@@ -2,9 +2,9 @@
 
 ## 1. Python
 
-The eudi-app-web-walletdriven-tester-py application was tested with
+The EUDI rQES Wallet-Driven Wallet Tester application was tested with
 
-+ Python version 3.10.8
+- Python version 3.10.8
 
 and should only be used with Python 3.10 or higher.
 
@@ -12,64 +12,81 @@ If you don't have it installed, please downlod it from <https://www.python.org/d
 
 ## 2. Flask
 
-The eudi-app-web-walletdriven-tester-py application was tested with
+The EUDI rQES Wallet-Driven Wallet Tester application was tested with
 
-+ Flask v. 2.3
+- Flask v. 2.3
 
 and should only be used with Flask v. 2.3 or higher.
 
 To install [Flask](https://flask.palletsprojects.com/en/2.3.x/), please follow the [Installation Guide](https://flask.palletsprojects.com/en/2.3.x/installation/).
 
-## 3. eudi-app-web-walletdriven-tester-py application
+## 3. Running the EUDI rQES Wallet-Driven Wallet Tester Application
 
-To run the eudi-app-web-walletdriven-tester-py application, follow these simple steps (some of which may have already been completed when installing Flask) for Linux/macOS or Windows.
+To run the application, follow these simple steps (some of which may have already been completed when installing Flask) for Linux/macOS or Windows.
 
+### Step 1: Clone the Repository
 
-1. Clone the eudi-app-web-walletdriven-tester-py repository:
+Clone the eudi-app-web-walletdriven-tester-py repository:
 
-    ```shell
-    git clone <repository>
-    ```
+```shell
+git clone <repository>
+```
 
-2. Create a `.venv` folder within the cloned repository:
+### Step 2: Create a Virtual Environment
 
-    ```shell
-    cd eudi-app-web-walletdriven-tester-py
-    python3 -m venv .venv
-    ```
+Create a `.venv` folder within the cloned repository:
 
-3. Activate the environment:
+```shell
+cd eudi-app-web-walletdriven-tester-py
+python3 -m venv .venv
+```
 
-   Linux/macOS
+### Step 3: Activate the Virtual Environment
 
-    ```shell
-    . .venv/bin/activate
-    ```
+Linux/macOS
 
-    Windows
+```shell
+. .venv/bin/activate
+```
 
-    ```shell
-    . .venv\Scripts\Activate
-    ```
+Windows
 
+```shell
+. .venv\Scripts\Activate
+```
 
-1. Install or upgrade _pip_
+### Step 4: Upgrade pip
 
-    ```shell
-    python -m pip install --upgrade pip
-    ```
+Install or upgrade _pip_
 
+```shell
+python -m pip install --upgrade pip
+```
 
-5. Install Flask, gunicorn and other dependencies in virtual environment
+### Step 5: Install Dependencies
 
-    ```shell
-    pip install -r app/requirements.txt
-    ```
+Install Flask and other dependencies in virtual environment
 
-    Note: The original pyMDOC-CBOR library will be forked into the eu-digital-identity-wallet repo (and the modifications will be applied), when it is made public, since a public repo cannot be forket into a private repo.
+```shell
+pip install -r app/requirements.txt
+```
 
-6. Run the eudiw-issuer application (on <http://127.0.0.1:5000>)
+### Step 6: Configure the Application
 
-    ```shell
-    flask --app app run
-    ```
+Copy \_config.py to config.py and modify the following configuration variables:
+
+- **secret_key**: define a secure and random key
+- **service_url**: the base URL of the Wallet Tester
+- **AS**: the URL of the QTSP Authorization Server (AS)
+- **RS**: the URL of the QTSP Resource Server (RS)
+- **SCA**: the URL of the rQES External SCA Server
+- **oauth_client_id**: the client ID of the Wallet Tester in the QTSP AS
+- **oauth_client_secret**: the client secret of the Wallet Tester in the QTSP AS
+
+### Step 7: Run the Application
+
+Run the EUDI rQES Wallet-Driven Wallet Tester application (on <http://127.0.0.1:5000>)
+
+```shell
+flask --app app run
+```

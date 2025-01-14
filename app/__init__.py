@@ -15,37 +15,24 @@
 # limitations under the License.
 #
 ###############################################################################
-from http.client import HTTPException
-import json
+
+"""
+Application Initialization File:
+Handles application setup, configuration, and exception handling.
+"""
+
 import os
 import sys
 
-from requests import Session
-import requests
-
-from app.app_config.config import ConfService
-
-
-sys.path.append(os.path.dirname(__file__))
-
-
-from flask import Flask, jsonify, render_template
+from flask import Flask, render_template
 from flask_session import Session
 from flask_cors import CORS
-import base64
-from binascii import unhexlify
-from pycose.messages import Sign1Message
-import cbor2
-from pycose.keys import EC2Key, CoseKey
+from app.app_config.config import ConfService
 
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
-from cryptography import x509
-from app_config.config import ConfService as cfgserv
-
+# Extend system path to include the current directory
+sys.path.append(os.path.dirname(__file__))
 
 def handle_exception(e):
-
     return (
         render_template(
             "500.html",
@@ -69,12 +56,12 @@ def create_app():
     app = Flask(__name__, instance_relative_config=True)
     app.config['SECRET_KEY'] = ConfService.secret_key
 
-    #app.register_error_handler(Exception, handle_exception)
+    # Register error handlers
     app.register_error_handler(404, page_not_found)
 
-    from . import (SCA_routes)
-
-    app.register_blueprint(SCA_routes.sca)
+    # Register routes
+    from . import (routes)
+    app.register_blueprint(routes.sca)
 
     # config session
     app.config["SESSION_FILE_THRESHOLD"] = 50

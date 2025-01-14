@@ -15,13 +15,24 @@
 # limitations under the License.
 #
 ###############################################################################
-
 """
-Application Entry Point: 
-Initializes and runs the Flask application.
+This config.py contains configuration data.
 """
 
-from app import create_app
+class ConfService:
+    secret_key = "secret_here"
 
-# Create the Flask app instance
-app = create_app()
+    service_url = "rp_web_page_here"
+    AS="qtsp_as_url_here"
+    RS="qtsp_rs_url_here"
+    SCA="rp_internal_sca_url_here"
+    
+    oauth_client_id = "client_id_here"
+    oauth_client_secret = "client_secret_here"
+    oauth_redirect_uri = service_url+"/oauth/login/code"
+
+    alg_oid={
+        "SHA256":"1.2.840.113549.1.1.11",
+        "SHA384":"1.2.840.113549.1.1.12",
+        "SHA512":"1.2.840.113549.1.1.13"
+    }
