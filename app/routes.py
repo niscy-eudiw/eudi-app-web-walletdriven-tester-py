@@ -110,7 +110,6 @@ def oauth_login_code():
     error_description=request.args.get("error_description")
     
     code_verifier = session["code_verifier"]
-    print(f"Code Verifier: {code_verifier}")
     
     if(code == None):
         return error_description, 400
@@ -151,7 +150,6 @@ def credentials_list():
     response = qtsp_client.csc_v2_credentials_list(session["service_access_token"])
     credentials = response.json()
     credentials_ids_list = credentials["credentialIDs"]
-    print(credentials_ids_list)
     return render_template('credential.html', redirect_url=cfgserv.service_url, credentials=credentials_ids_list)
 
 @sca.route("/tester/set_credential_id", methods=["GET", "POST"])
@@ -164,11 +162,9 @@ def setCredentialId():
     
     if credential_info.status_code == 200:
         credential_info_json = credential_info.json()
-        print(credential_info_json["cert"])
         
         certificate_info = credential_info_json["cert"]
         certificates = certificate_info["certificates"]
-        print(certificates)
         
         if(session.get("end_entity_certificate") is not None):
             session.pop("end_entity_certificate")
@@ -274,13 +270,11 @@ def authorization_credential():
     session["code_verifier"] = code_verifier
     
     hashes_string = ";".join(hashes)
-    print(hashes_string)
     
     response = qtsp_client.oauth2_authorize_credential_request(code_challenge, code_challenge_method, 1, hashes_string, hash_algorithm_oid, session["credentialChosen"])
 
     if(response.status_code == 302): # redirects to the QTSP OID4VP Authentication Page
         location = response.headers.get("Location")
-        print("Location to authenticate: "+ location)
         response_final = make_response(render_template('credential_authorization.html', redirect_url=cfgserv.service_url, location=location, env_var=env_var))
         return response_final
     else:
@@ -299,7 +293,6 @@ def upload_document():
     
     file_path = session["filename"]
     file = open(file_path, "rb")
-    print(os.path.basename(file.name))
     document_content = file.read()
     base64_pdf= base64.b64encode(document_content).decode("utf-8")
     
@@ -328,16 +321,8 @@ def upload_document():
     signed_document_base64 = response.json()["documentWithSignature"][0]
     
     new_name = add_suffix_to_filename(os.path.basename(file_path))
-    print(new_name)    
     mime_type, _ = mimetypes.guess_type(file_path)
-    print(mime_type)  
         
-    response_json = {
-        "document_string": signed_document_base64, 
-        "filename": new_name, 
-        "content_type": mime_type
-    }
-    
     os.remove(file_path)
         
     if(session.get("signature_date") is not None):

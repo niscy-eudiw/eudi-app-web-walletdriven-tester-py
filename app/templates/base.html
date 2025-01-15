@@ -27,6 +27,12 @@
     />
     <link
       rel="stylesheet"
+      href="{{ url_for('static', filename='css/stylesheets/custom/personalized.css') }}"
+      media="all"
+      type="text/css"
+    />
+    <link
+      rel="stylesheet"
       href="{{ url_for('static', filename='fontawesome-free-5.15.4-web/css/fontawesome.min.css') }}"
       type="text/css"
     />
@@ -55,7 +61,6 @@
       src="{{ url_for('static', filename='scripts/respond/respond-1.4.2.js') }}"
       charset="UTF-8"
     ></script>
-    <meta name="referrer" content="no-referrer" />
     <script
       type="text/javascript"
       src="{{ url_for('static', filename='scripts/loc/loc_en_9.7.1.20.1679559965505.js') }}"
@@ -68,13 +73,7 @@
     />
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!--Personalized CSS-->
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='personalized.css') }}"
-      media="all"
-      type="text/css"
-    />
+    <meta name="referrer" content="no-referrer" />
     <title>rQES Wallet-centric Wallet Tester</title>
   </head>
 
@@ -88,7 +87,9 @@
               style="padding-left: 60px; padding-right: 60px"
             >
               <div class="col-md-9">
-                <img src="{{ url_for('static', filename='ic-logo.svg') }}" />
+                <img
+                  src="{{ url_for('static', filename='images/ic-logo.svg') }}"
+                />
               </div>
 
               <div class="col-md-3">

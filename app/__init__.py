@@ -53,7 +53,7 @@ def page_not_found(e):
     )
 
 def create_app():
-    app = Flask(__name__, instance_relative_config=True)
+    app = Flask(__name__, instance_relative_config=True, static_url_path='/tester/static')
     app.config['SECRET_KEY'] = ConfService.secret_key
 
     # Register error handlers
@@ -71,5 +71,5 @@ def create_app():
     Session(app)
 
     # CORS is a mechanism implemented by browsers to block requests from domains other than the server's one.
-    CORS(app, supports_credentials=True)
+    CORS(app, supports_credentials=True, resources={r"/tester/*": {"origins": ConfService.AS}})
     return app
