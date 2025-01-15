@@ -1,0 +1,11 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <h1>Error Code: {{error_code}}</h1>
+    <div id="content" class="content-wrap content-center col-md-6 col-sm-7">
+      <div class="genericErrors" id="genericErrorsDesc"></div>
+      <p>{{ error }}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
