@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import requests
+import requests, json
 from app_config.config import ConfService as cfgserv
-import json
+from flask import (current_app as app)
 
 # Function that makes a request to the endpoint /calculate_hash do SCA
 # It return a JSON Object with the hash value and the date
@@ -43,12 +43,20 @@ def calculate_hash_request(document, signature_format, conformance_level, signed
         "hashAlgorithmOID": hash_algorithm_oid
     })
 
-    print(payload)
-
     response = requests.post(url , headers=headers, data=payload)
-    print(response.text)
+    if(response.status_code == 200):
+        calculate_hash_json = response.json()
+        hashes = calculate_hash_json["hashes"]
+        signature_date = calculate_hash_json["signature_date"]
+        app.logger.info("Successfully retrieve the hash value and the date")
+        return hashes, signature_date
     
-    return response.json()
+    else:
+        message = response.json()["message"]
+        app.logger.error(message)
+        raise Exception("It was impossible to retrieve the authentication link: "+message)
+    
+    
      
 def obtain_signed_document(document, signature_format, conformance_level, signed_envelope_property, container, end_entity_certificate,
                            certificate_chain, hash_algorithm_oid, signatures, date):
@@ -77,11 +85,13 @@ def obtain_signed_document(document, signature_format, conformance_level, signed
         "signatures": signatures,
         "date": date
     })
-
-    print(payload)
-
+    
     response = requests.post(url, headers=headers, data=payload)
-
-    print(response.text)
-
-    return response
+    if(response.status_code == 200):
+        app.logger.info("Successfully retrieved the signed document.")
+        return response.json()["documentWithSignature"][0]
+    
+    else:
+        message = response.json()["message"]
+        app.logger.error(message)
+        raise Exception("It was impossible to retrieved a signed document: "+message)

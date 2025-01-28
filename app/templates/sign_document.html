@@ -2,7 +2,7 @@
 <div class="row" style="height: 100%">
   <div class="col-lg-12" style="height: 100%">
     <div id="content" class="content-box col-md-11">
-      <h1>Signed Document</h1>
+      <h1>Document Signed</h1>
 
       <div class="genericErrors" id="genericErrorsDesc"></div>
 
@@ -26,7 +26,9 @@
           Download
         </button>
 
-        <a class="sign-custom-btn" href="{{ url_for('SCA.authentication') }}"
+        <a
+          class="sign-custom-btn"
+          href="{{ url_for('tester.service_authentication') }}"
           >Close</a
         >
       </div>

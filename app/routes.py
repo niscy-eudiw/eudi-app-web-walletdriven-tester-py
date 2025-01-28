@@ -16,33 +16,25 @@
 #
 ###############################################################################
 
-import os
-import base64
-import mimetypes
+import os, base64, base64, mimetypes
 from flask import (
     Blueprint,
     render_template,
-    make_response,
     request,
-    jsonify,
     redirect, 
     url_for,
-    session
+    session,
+    send_from_directory,
+    current_app as app
 )
-import requests
-from werkzeug.utils import secure_filename
-import base64
-import secrets
-import hashlib
+
 from app_config.config import ConfService as cfgserv
-import qtsp_client, sca_client
+import app.model.qtsp_client as qc, app.model.sca_client as sc, app.model.rp_client as rc, app.model.documents_manage as dm
 from cryptography.x509.oid import _SIG_OIDS_TO_HASH 
 from cryptography.hazmat._oid import ObjectIdentifier
 
-sca = Blueprint("SCA", __name__, url_prefix="/")
-sca.template_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template/')
-
-UPLOAD_FOLDER = 'documents'
+tester = Blueprint("tester", __name__, url_prefix="/tester")
+tester.template_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template/')
 
 env_var = os.getenv('ENV_TYPE', 'demo')
 
@@ -59,253 +51,200 @@ DIGEST_OIDS = {
     "sha3_512": "2.16.840.1.101.3.4.2.10",
 }
 
-
-@sca.route('/', methods=['GET', 'POST'])
-def index():
-    return render_template('index.html', redirect_url= cfgserv.service_url)
-
-@sca.route('/tester', methods=['GET', 'POST'])
+@tester.route('/', methods=['GET'])
 def main():
     return render_template('main.html', redirect_url= cfgserv.service_url)
 
-@sca.route('/tester/auth', methods=['GET', 'POST'])
-def authentication():
-    return render_template('auth.html', redirect_url= cfgserv.service_url, env_var=env_var)
+@tester.route("/relying_party_service", methods=["GET"])
+def getRelyingPartyService():
+    request_uri = request.args.get("request_uri")
+    client_id = request.args.get("client_id")
+    
+    response_uri, _, hashAlgorithmOID, documentLocations = rc.getRequestObjectFromRP(request_uri, client_id)
+    
+    update_session_values("response_uri", response_uri)
+    update_session_values("hash_algorithm_oid", hashAlgorithmOID)
+    update_session_values("documentLocations", documentLocations)
+    
+    return redirect(url_for("tester.service_authentication"))
 
 # starts the authentication process throught the /oauth2/authorize and receives the link to the wallet
-@sca.route('/tester/service_authorization', methods=['GET','POST'])
-def service_authorization():
-    code_verifier = secrets.token_urlsafe(32)
-    code_challenge_method = "S256"
-    code_challenge_bytes = hashlib.sha256(code_verifier.encode()).digest()
-    code_challenge = base64.urlsafe_b64encode(code_challenge_bytes).rstrip(b'=').decode()
+@tester.route('/auth/service', methods=['GET'])
+def service_authentication():
+    app.logger.info("Starting the authentication process.")
     
-    if(session.get("code_verifier") is not None):
-        session.pop("code_verifier")
-    session["code_verifier"] = code_verifier
-        
-    response = qtsp_client.oauth2_authorize_service_request(code_challenge, code_challenge_method)
+    try:
+       code_verifier_local, location = qc.oauth2_authorize_service_request()
+    except Exception as e:
+        app.logger.error("Error: "+str(e))
+        return str, 400
 
-    # get location to redirect & cookie returned
-    if(response.status_code == 400):
-        message = response.json()["message"]
-        return message, 400
-    elif response.status_code == 200:
-        return response
-    else:
-        location = response.headers.get("Location")
-        if location.startswith("eudi-openid4vp"):        
-            response_json = {"location": location}
-            return jsonify(response_json), 302
-        else:
-            response = requests.get(url=location)
-            return response.text, 400
+    update_session_values(variable_name="code_verifier", variable_value=code_verifier_local)
+
+    app.logger.info("Displaying the authentication page.")
+
+    return render_template('auth.html', redirect_url=cfgserv.service_url, env_var=env_var, location=location)
+
+@tester.route("/auth/service/success", methods=["GET", "POST"])
+def service_authentication_successful():
+    return render_template('auth_success_page.html', redirect_url= cfgserv.service_url, access_token_value=session["service_access_token"], env_var=env_var)
 
 # endpoint where the qtsp will be redirected to after authentication
-@sca.route("/tester/oauth/login/code", methods=["GET", "POST"])
+@tester.route("/oauth/login/code", methods=["GET", "POST"])
 def oauth_login_code():
     code = request.args.get("code")
     state = request.args.get("state")
     error = request.args.get("error")
     error_description=request.args.get("error_description")
+    app.logger.info("Received request with code: "+str(code) + "and state "+str(state))
+    if(error is not None):
+        app.logger.error("Received Error "+error+": "+error_description)
+        return error_description, 400
     
-    code_verifier = session["code_verifier"]
+    code_verifier = session["code_verifier"]   
     
     if(code == None):
         return error_description, 400
     
     else:
-        response = qtsp_client.oauth2_token_request(code, code_verifier) # trades the code for the access token
-                
-        if(response.status_code == 400):
-            error = response.json()["error"]
-            error_description = response.json()["error_description"]
-            return error_description
-        elif(response.status_code == 200):
-            response_json = response.json()
-            access_token = response_json["access_token"]
-            scope = response_json["scope"]
-            
-            if(scope == "service"):
-                if(session.get("code_verifier") is not None):
-                    session.pop("code_verifier")
-                if(session.get("service_access_token") is not None):
-                    session.pop("service_access_token")
-                session["service_access_token"] = access_token
-                return redirect(url_for("SCA.service_auth_successful"))
-            elif(scope == "credential"):
-                if(session.get("code_verifier") is not None):
-                    session.pop("code_verifier")
-                if(session.get("credential_access_token") is not None):
-                    session.pop("credential_access_token")
-                session["credential_access_token"] = access_token
-                return redirect(url_for("SCA.upload_document"))
+        try:
+            app.logger.info("Requesting token with code: "+code+" and code_verifier: "+code_verifier)
+            scope, access_token = qc.oauth2_token_request(code, code_verifier) # trades the code for the access token
+        except Exception as e:
+            return e, 400
+              
+        if(scope == "service"):
+            # remove_session_values(variable_name="code_verifier")    
+            update_session_values(variable_name="service_access_token", variable_value=access_token)
+            return redirect(url_for("tester.service_authentication_successful"))
+        elif(scope == "credential"):
+            # remove_session_values(variable_name="code_verifier")
+            update_session_values(variable_name="credential_access_token", variable_value=access_token)
+            return redirect(url_for("tester.upload_document"))
 
-@sca.route("/tester/service_auth", methods=["GET", "POST"])
-def service_auth_successful():
-    return render_template('auth_success.html', redirect_url= cfgserv.service_url, access_token_value=session["service_access_token"], env_var=env_var)
+@tester.route("/credentials/list", methods=["GET"])
+def list_credentials():
+    list_credentials_ids = qc.csc_v2_credentials_list(session["service_access_token"])
+    return render_template('credential.html', redirect_url=cfgserv.service_url, credentials=list_credentials_ids)
 
-@sca.route("/tester/credentials_list", methods=["GET", "POST"])
-def credentials_list():
-    response = qtsp_client.csc_v2_credentials_list(session["service_access_token"])
-    credentials = response.json()
-    credentials_ids_list = credentials["credentialIDs"]
-    return render_template('credential.html', redirect_url=cfgserv.service_url, credentials=credentials_ids_list)
-
-@sca.route("/tester/set_credential_id", methods=["GET", "POST"])
-def setCredentialId():
-    if(session.get("credentialChosen") is not None):
-        session.pop("credentialChosen")
-    session["credentialChosen"] = request.get_json().get("credentialID")
+@tester.route("/credentials/select", methods=["POST"])
+def select_credential():
+    credentialId = request.get_json().get("credentialID")
+    app.logger.info("Selected credential: "+credentialId)
+    update_session_values(variable_name="credentialID", variable_value=credentialId)
     
-    credential_info = qtsp_client.csc_v2_credentials_info(session["service_access_token"], session["credentialChosen"])
+    app.logger.info("Requesting information about the selected credential.")
+    certificates, key_algos = qc.csc_v2_credentials_info(session["service_access_token"], credentialId)
     
-    if credential_info.status_code == 200:
-        credential_info_json = credential_info.json()
-        
-        certificate_info = credential_info_json["cert"]
-        certificates = certificate_info["certificates"]
-        
-        if(session.get("end_entity_certificate") is not None):
-            session.pop("end_entity_certificate")
-        session["end_entity_certificate"]=certificates[0]
-        
-        if(session.get("certificate_chain") is not None):
-            session.pop("certificate_chain")
-        session["certificate_chain"]=certificates[1]
-        
-        key_info = credential_info_json["key"]
-        key_algos = key_info["algo"]
-        
-        if(session.get("key_algos") is not None):
-            session.pop("key_algos")
-        session["key_algos"]=key_algos
+    update_session_values(variable_name="end_entity_certificate", variable_value=certificates[0])
+    update_session_values(variable_name="certificate_chain", variable_value=certificates[1])
+    update_session_values(variable_name="key_algos", variable_value=key_algos)
         
     return "success"
 
-@sca.route('/tester/select_document', methods=['GET','POST'])
-def select_pdf():
+@tester.route('/document/select', methods=['GET'])
+def select_document():
     key_algos = session["key_algos"]
     hash_algos = []
     for algo in key_algos:
         hash_algo = _SIG_OIDS_TO_HASH.get(ObjectIdentifier(algo))
         if(hash_algo is not None):
             hash_algos.append({"name":hash_algo.name.upper(), "oid":DIGEST_OIDS.get(hash_algo.name.lower())})
+    
+    documentLocations = session["documentLocations"]
+    if(documentLocations is not None):
+        for loc in documentLocations:
+            document, filename = rc.getDocumentFromURI(loc['uri'])
+            app.logger.info("Document received from the URI.")
             
-    return render_template('pdf.html', redirect_url= cfgserv.service_url, digest_algorithms=hash_algos)
-
-def get_signature_format_simplified(signature_format):
-    if signature_format == "PAdES":
-        return 'P'
-    elif signature_format == "XAdES":
-        return 'X'
-    elif signature_format == "JAdES":
-        return 'J'
+            saved_file_path, saved_filename  = dm.save_document_with_name(document, filename)
+            session["filepath"] = saved_file_path
+            app.logger.info("Document saved at "+saved_file_path)
+                        
+            url = cfgserv.service_url+"/document/"+saved_filename
+            app.logger.info("Generated an URL to retrieve the document.")
+        return render_template('pdf.html', redirect_url= cfgserv.service_url, digest_algorithms=hash_algos, mode="view", file_url=url)
+    
     else:
-        return 'C'
+        return render_template('pdf.html', redirect_url= cfgserv.service_url, digest_algorithms=hash_algos, mode = "upload")
 
-def get_unique_filename(folder, filename):
-    base, ext = os.path.splitext(filename)  # Split the filename into name and extension
-    counter = 1
-    new_filename = filename
-    while os.path.exists(os.path.join(folder, new_filename)):
-        new_filename = f"{base}_{counter}{ext}"
-        counter += 1
-    return new_filename
+@tester.route('/document/<path:filename>', methods=["GET"])
+def serve_document(filename):
+    return send_from_directory("documents", filename)
 
-def save_document(document):
-    filename = secure_filename(document.filename)
-    filename = get_unique_filename(UPLOAD_FOLDER, filename)
-    file_path = os.path.join(UPLOAD_FOLDER, filename)
-    document.save(file_path)
-    document.stream.seek(0)
-    return file_path
-
-@sca.route("/tester/authorization_credential", methods=["GET", "POST"])
-def authorization_credential():
-    document = request.files['upload']
+@tester.route("/auth/credential", methods=["POST"])
+def credential_authorization():
+    documentLocations = session["documentLocations"]
+    if(documentLocations is None):
+        document = request.files['upload']
+        filename = dm.save_document(document)
+        session["filepath"] = filename
+        base64_pdf= base64.b64encode(document.read()).decode("utf-8")
+        document.stream.seek(0)
+       
+    if(documentLocations is not None):
+        filename = session["filepath"]
+        base64_pdf = dm.get_base64_document(filename)
+        
     form_local= request.form
-
-    filename = save_document(document)
-
-    session["filename"] = filename # filepath
-    session["form_global"] = form_local
-
-    base64_pdf= base64.b64encode(document.read()).decode("utf-8")
-    document.stream.seek(0)
-    
     container=form_local["container"]
-    signature_format= get_signature_format_simplified(form_local["signature_format"])
+    session["container"] = container
+    signature_format= form_local["signature_format"]
+    session["signature_format"] = signature_format
     signed_envelope_property= form_local["packaging"]
+    session["signed_envelope_property"] = signed_envelope_property 
     conformance_level= form_local["level"]
+    session["conformance_level"] = conformance_level
     hash_algorithm_oid= form_local["algorithm"]
+    session["hash_algorithm_oid"] = hash_algorithm_oid
 
-    calculate_hash_json = sca_client.calculate_hash_request(
-        base64_pdf,
-        signature_format,
-        conformance_level,
-        signed_envelope_property,
-        container,
-        session["end_entity_certificate"],
-        session["certificate_chain"],
-        hash_algorithm_oid
-    )
-    hashes = calculate_hash_json["hashes"]
-    if(session.get("hashes") is not None):
-        session.pop("hashes")
-    session["hashes"] = hashes
-
-    signature_date = calculate_hash_json["signature_date"]
-    if(session.get("signature_date") is not None):
-        session.pop("signature_date")
-    session["signature_date"] = signature_date
-
-    code_verifier = secrets.token_urlsafe(32)    
-    code_challenge_method = "S256"
-    code_challenge_bytes = hashlib.sha256(code_verifier.encode()).digest()
-    code_challenge = base64.urlsafe_b64encode(code_challenge_bytes).rstrip(b'=').decode()
-    
-    if(session.get("code_verifier") is not None):
-        session.pop("code_verifier")
-    session["code_verifier"] = code_verifier
+    hashes, signature_date = sc.calculate_hash_request(
+            base64_pdf,
+            signature_format,
+            conformance_level,
+            signed_envelope_property,
+            container,
+            session["end_entity_certificate"],
+            session["certificate_chain"],
+            hash_algorithm_oid
+        )    
+    update_session_values(variable_name="hashes", variable_value=hashes)
+    update_session_values(variable_name="signature_date", variable_value=signature_date)
     
     hashes_string = ";".join(hashes)
     
-    response = qtsp_client.oauth2_authorize_credential_request(code_challenge, code_challenge_method, 1, hashes_string, hash_algorithm_oid, session["credentialChosen"])
+    try:
+        code_verifier, location = qc.oauth2_authorize_credential_request(hashes_string, hash_algorithm_oid, session["credentialID"])
+    except Exception as e:
+        return e, 400
 
-    if(response.status_code == 302): # redirects to the QTSP OID4VP Authentication Page
-        location = response.headers.get("Location")
-        response_final = make_response(render_template('credential_authorization.html', redirect_url=cfgserv.service_url, location=location, env_var=env_var))
-        return response_final
-    else:
-        message = response.json()["message"]
-        return message, 400
-    
+    update_session_values(variable_name="code_verifier", variable_value=code_verifier)
+
+
+    return render_template('credential_authorization.html', redirect_url=cfgserv.service_url, location=location, env_var=env_var)
+
 # Requests to the backend servers
-@sca.route('/tester/upload_document', methods=['GET','POST'])
+@tester.route('/document/sign', methods=['GET'])
 def upload_document():
-    form = session["form_global"]
-    container=form["container"]
-    signature_format= get_signature_format_simplified(form["signature_format"])
-    signed_envelope_property= form["packaging"]
-    conformance_level= form["level"]
-    hash_algorithm_oid= form["algorithm"]
     
-    file_path = session["filename"]
-    file = open(file_path, "rb")
-    document_content = file.read()
-    base64_pdf= base64.b64encode(document_content).decode("utf-8")
+    container = session["container"]
+    signature_format = session["signature_format"] 
+    signed_envelope_property = session["signed_envelope_property"]
+    conformance_level = session["conformance_level"]
+    hash_algorithm_oid = session["hash_algorithm_oid"]
     
-    response = qtsp_client.csc_v2_signatures_signHash(
+    file_path = session["filepath"]
+    base64_pdf = dm.get_base64_document(file_path)
+    
+    signatures = qc.csc_v2_signatures_signHash(
         session["credential_access_token"],
         session["hashes"],
         hash_algorithm_oid, 
-        session["credentialChosen"], 
+        session["credentialID"], 
         "1.2.840.10045.2.1"
     )
 
-    signatures = response.json()["signatures"]
-    response = sca_client.obtain_signed_document(
+    signed_document_base64 = sc.obtain_signed_document(
         base64_pdf, 
         signature_format, 
         conformance_level,
@@ -318,38 +257,49 @@ def upload_document():
         session["signature_date"]
     )
     
-    signed_document_base64 = response.json()["documentWithSignature"][0]
+    remove_session_values(variable_name="signature_date")
+    remove_session_values(variable_name="form_global")
+    remove_session_values(variable_name="credentialID")
+    remove_session_values(variable_name="credential_access_token")
+    remove_session_values(variable_name="hashes")
+    remove_session_values(variable_name="certificate_chain")
+    remove_session_values(variable_name="end_entity_certificate")
+    remove_session_values(variable_name="filename")
     
-    new_name = add_suffix_to_filename(os.path.basename(file_path))
-    mime_type, _ = mimetypes.guess_type(file_path)
-        
+    documentLocations = session["documentLocations"]
+    if(documentLocations is None):
+        new_name = add_suffix_to_filename(os.path.basename(file_path))
+        mime_type, _ = mimetypes.guess_type(file_path)    
+    
     os.remove(file_path)
+    
+    if(documentLocations is not None):
+        response_uri = session["response_uri"]
+        _ = rc.postSignedDocumentResponseURI(response_uri, signed_document_base64)
+        remove_session_values("documentLocations")
+        remove_session_values("response_uri")
         
-    if(session.get("signature_date") is not None):
-        session.pop("signature_date")
-    if(session.get("form_global") is not None):
-        session.pop("form_global")
-    if(session.get("credentialChosen") is not None):
-        session.pop("credentialChosen")
-    if(session.get("credential_access_token") is not None):
-        session.pop("credential_access_token")
-    if(session.get("hashes") is not None):
-        session.pop("hashes")
-    if(session.get("certificate_chain") is not None):
-        session.pop("certificate_chain")
-    if(session.get("end_entity_certificate") is not None):
-        session.pop("end_entity_certificate")
-    if(session.get("filename") is not None):
-        session.pop("filename")
-    
-    return render_template(
-        'sign_document.html',
-        redirect_url=cfgserv.service_url, 
-        document_signed_value=signed_document_base64,
-        document_content_type=mime_type,
-        document_filename=new_name
-    )
-    
+        return render_template('sign_document_success.html', redirect_url=cfgserv.service_url)
+    else:
+        return render_template(
+            'sign_document.html',
+            redirect_url=cfgserv.service_url, 
+            document_signed_value=signed_document_base64,
+            document_content_type=mime_type,
+            document_filename=new_name
+        )
+
+
+def update_session_values(variable_name, variable_value):
+    if(session.get(variable_name) is not None):
+        session.pop(variable_name)
+    session[variable_name] = variable_value
+    # app.logger.info("Session: "+str(session))
+
+def remove_session_values(variable_name):
+    if(session.get(variable_name) is not None):
+        session.pop(variable_name)
+
 def add_suffix_to_filename(filename, suffix="_signed"):
     name, ext = os.path.splitext(filename)
     return f"{name}{suffix}{ext}"

@@ -16,7 +16,10 @@
           functionalities of the EUDI Wallet rQES.
         </p>
         <div class="genericErrors" id="genericErrorsDesc"></div>
-        <form action="{{ url_for('SCA.authentication') }}" method="GET">
+        <form
+          action="{{ url_for('tester.service_authentication') }}"
+          method="GET"
+        >
           <!-- Submit button -->
           <button class="btn custom-btn" type="submit">Start</button>
         </form>

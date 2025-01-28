@@ -13,14 +13,13 @@
       >
 
       <div id="container-redirect-wallet" class="btn custom-btn">
-        <a id="link_to_wallet">Go to EUDI Wallet</a>
-        <!--<i class="fa fa-arrow-right" style="margin-left: 10px"></i>-->
+        <a id="link_to_wallet" href="{{ location }}">Go to EUDI Wallet</a>
       </div>
 
       {% if env_var == "dev" %}
-      <div id="temp" style="width: 100%; margin-top: 20px">
+      <div id="dev-div" style="width: 100%; margin-top: 20px">
         <p style="font-weight: bold">Link to EUDI Wallet:</p>
-        <p id="result">Placeholder for the EUDI Wallet link</p>
+        <p id="result">{{ location }}</p>
         <p id="description" style="font-weight: bold">
           After authorization the wallet will redirect to a link. Introduce link
           redirect to in the input box below.
@@ -39,7 +38,7 @@
           Submit Text
         </button>
         <a
-          id="link_to_continue"
+          id="link-to-continue"
           class="btn sign-custom-btn"
           style="margin-top: 0px"
           >Continue</a
@@ -52,41 +51,21 @@
 <script>
   document.getElementById("container-redirect-wallet").hidden = true;
   if ("{{env_var}}" === "dev") {
-    document.getElementById("temp").hidden = true;
-    document.getElementById("link_to_continue").hidden = true;
+    document.getElementById("dev-div").hidden = true;
+    document.getElementById("link-to-continue").hidden = true;
   }
 
   async function serviceAuthentication() {
-    const response = await fetch("{{ url_for('SCA.service_authorization') }}");
-
-    if (response.status === 302) {
-      data = response.json().then((d) => {
-        if (d && d["location"]) {
-          document.getElementById("link_to_wallet").href = d["location"];
-          document.getElementById("container-redirect-wallet").hidden = false;
-
-          if ("{{env_var}}" === "dev") {
-            document.getElementById("result").textContent = d["location"];
-            document.getElementById("temp").hidden = false;
-          }
-        } else {
-          console.error('Expected "location" key in the response');
-          document.getElementById("genericErrorsDesc").textContent =
-            "Url to wallet not found.";
-        }
-      });
-    } else {
-      data = response.text().then((message) => {
-        console.log(message);
-        document.getElementById("genericErrorsDesc").textContent = message;
-      });
+    document.getElementById("container-redirect-wallet").hidden = false;
+    if ("{{env_var}}" === "dev") {
+      document.getElementById("dev-div").hidden = false;
     }
   }
 
   async function submitButton() {
     const userInput = document.getElementById("authLink").value;
-    document.getElementById("link_to_continue").href = userInput;
-    document.getElementById("link_to_continue").hidden = false;
+    document.getElementById("link-to-continue").href = userInput;
+    document.getElementById("link-to-continue").hidden = false;
   }
 </script>
 {% endblock %}
