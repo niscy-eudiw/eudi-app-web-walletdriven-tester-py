@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 app/app_config/config.py
+app/documents/*
 
 # C extensions
 *.so

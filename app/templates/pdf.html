@@ -8,13 +8,14 @@
 
       <form
         method="post"
-        action="{{redirect_url}}/authorization_credential"
+        action="{{ url_for('tester.credential_authorization') }}"
         accept-charset="UTF-8"
         enctype="multipart/form-data"
         autocapitalize="off"
         spellcheck="false"
         style="padding-top: 10px"
       >
+        {% if mode == "upload" %}
         <h2>Step 1: Select Document</h2>
         <div
           class="form-check col-md-12 d-flex justify-content-center align-items-center"
@@ -24,10 +25,6 @@
             style="width: fit-content"
             for="filename"
           >
-            <!--<i
-              class="fa fa-upload"
-              style="padding: 3px; text-align: center"
-            ></i>-->
             Choose Document
           </label>
           <input
@@ -47,6 +44,19 @@
           type="application/pdf"
           style="border: 1px solid #ccc; margin-top: 10px"
         ></iframe>
+        {% elif mode == "view" %}
+        <h2>Step 1: Confirm Document Received</h2>
+        <iframe
+          id="viewer"
+          frameborder="0"
+          scrolling="auto"
+          height="500px"
+          width="100%"
+          src="{{ file_url }}"
+          type="application/pdf"
+          style="border: 1px solid #ccc; margin-top: 10px"
+        ></iframe>
+        {% endif %}
 
         <h2 style="margin-top: 10px">Step 2: Select Signature Options</h2>
 
@@ -75,7 +85,7 @@
                 type="radio"
                 id="XAdES"
                 name="signature_format"
-                value="XAdES"
+                value="X"
                 required
               />
               XAdES
@@ -85,7 +95,7 @@
                 type="radio"
                 id="CAdES"
                 name="signature_format"
-                value="CAdES"
+                value="C"
               />
               CAdES
             </label>
@@ -94,7 +104,7 @@
                 type="radio"
                 id="PAdES"
                 name="signature_format"
-                value="PAdES"
+                value="P"
               />
               PAdES
             </label>
@@ -103,7 +113,7 @@
                 type="radio"
                 id="JAdES"
                 name="signature_format"
-                value="JAdES"
+                value="J"
               />
               JAdES
             </label>
@@ -245,7 +255,7 @@
 
     select.innerHTML = "";
 
-    if (this.value == "XAdES") {
+    if (this.value == "X") {
       enveloped.disabled = false;
       enveloping.disabled = false;
       detached.disabled = false;
@@ -259,7 +269,7 @@
       ];
 
       populate_select(options);
-    } else if (this.value == "CAdES") {
+    } else if (this.value == "C") {
       enveloped.disabled = true;
       enveloping.disabled = false;
       detached.disabled = false;
@@ -273,7 +283,7 @@
       ];
 
       populate_select(options);
-    } else if (this.value == "PAdES") {
+    } else if (this.value == "P") {
       enveloped.disabled = false;
       enveloping.disabled = true;
       detached.disabled = true;
@@ -287,7 +297,7 @@
       ];
 
       populate_select(options);
-    } else if (this.value == "JAdES") {
+    } else if (this.value == "J") {
       enveloped.disabled = true;
       enveloping.disabled = false;
       detached.disabled = false;
@@ -317,13 +327,10 @@
     }
   });
 
-  let input = document.getElementById("filename");
-  input.addEventListener("change", (event) => {
+  document.getElementById("filename").addEventListener("change", (event) => {
     let input = event.target;
     let path = input.value;
     let file = input.files[0];
-    console.log(URL.createObjectURL(file));
-    console.log("sucess");
     var fileURL = URL.createObjectURL(file);
     document.getElementById("viewer").src = fileURL;
     document.getElementById("btncheck").disabled = false;

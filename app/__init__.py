@@ -60,13 +60,20 @@ def create_app():
     app.register_error_handler(404, page_not_found)
 
     # Register routes
-    from . import (routes)
-    app.register_blueprint(routes.sca)
+    from . import routes  
+    app.register_blueprint(routes.tester)
+    
+    import main.routes as main_routes
+    app.register_blueprint(main_routes.base)  
 
     # config session
+    app.config["SESSION_TYPE"] = "filesystem"
     app.config["SESSION_FILE_THRESHOLD"] = 50
     app.config["SESSION_PERMANENT"] = False
-    app.config["SESSION_TYPE"] = "filesystem"
+    app.config['SESSION_USE_SIGNER'] = True # Ensures sessions are cryptographically signed to prevent tampering
+    app.config['SESSION_KEY_PREFIX'] = 'wallet-centric-session:'
+    app.config['SESSION_COOKIE_NAME'] = "wallet-tester-session"
+    
     app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True)
     Session(app)
 
