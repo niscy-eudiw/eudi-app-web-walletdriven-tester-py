@@ -87,7 +87,7 @@ def service_authentication():
 
 @tester.route("/auth/service/success", methods=["GET", "POST"])
 def service_authentication_successful():
-    return render_template('auth_success_page.html', redirect_url= cfgserv.service_url, access_token_value=session["service_access_token"], env_var=env_var)
+    return render_template('auth_success_page.html', redirect_url= cfgserv.service_url, access_token_value=session.get("service_access_token"), env_var=env_var)
 
 # endpoint where the qtsp will be redirected to after authentication
 @tester.route("/oauth/login/code", methods=["GET", "POST"])
@@ -101,7 +101,7 @@ def oauth_login_code():
         app.logger.error("Received Error "+error+": "+error_description)
         return error_description, 400
     
-    code_verifier = session["code_verifier"]   
+    code_verifier = session.get("code_verifier")
     
     if(code == None):
         return error_description, 400
@@ -124,7 +124,7 @@ def oauth_login_code():
 
 @tester.route("/credentials/list", methods=["GET"])
 def list_credentials():
-    list_credentials_ids = qc.csc_v2_credentials_list(session["service_access_token"])
+    list_credentials_ids = qc.csc_v2_credentials_list(session.get("service_access_token"))
     return render_template('credential.html', redirect_url=cfgserv.service_url, credentials=list_credentials_ids)
 
 @tester.route("/credentials/select", methods=["POST"])
@@ -134,7 +134,7 @@ def select_credential():
     update_session_values(variable_name="credentialID", variable_value=credentialId)
     
     app.logger.info("Requesting information about the selected credential.")
-    certificates, key_algos = qc.csc_v2_credentials_info(session["service_access_token"], credentialId)
+    certificates, key_algos = qc.csc_v2_credentials_info(session.get("service_access_token"), credentialId)
     
     update_session_values(variable_name="end_entity_certificate", variable_value=certificates[0])
     update_session_values(variable_name="certificate_chain", variable_value=certificates[1])
@@ -144,14 +144,14 @@ def select_credential():
 
 @tester.route('/document/select', methods=['GET'])
 def select_document():
-    key_algos = session["key_algos"]
+    key_algos = session.get("key_algos")
     hash_algos = []
     for algo in key_algos:
         hash_algo = _SIG_OIDS_TO_HASH.get(ObjectIdentifier(algo))
         if(hash_algo is not None):
             hash_algos.append({"name":hash_algo.name.upper(), "oid":DIGEST_OIDS.get(hash_algo.name.lower())})
     
-    documentLocations = session["documentLocations"]
+    documentLocations = session.get("documentLocations")
     if(documentLocations is not None):
         for loc in documentLocations:
             document, filename = rc.getDocumentFromURI(loc['uri'])
@@ -174,7 +174,7 @@ def serve_document(filename):
 
 @tester.route("/auth/credential", methods=["POST"])
 def credential_authorization():
-    documentLocations = session["documentLocations"]
+    documentLocations = session.get("documentLocations")
     if(documentLocations is None):
         document = request.files['upload']
         filename = dm.save_document(document)
@@ -183,7 +183,7 @@ def credential_authorization():
         document.stream.seek(0)
        
     if(documentLocations is not None):
-        filename = session["filepath"]
+        filename = session.get("filepath")
         base64_pdf = dm.get_base64_document(filename)
         
     form_local= request.form
@@ -204,8 +204,8 @@ def credential_authorization():
             conformance_level,
             signed_envelope_property,
             container,
-            session["end_entity_certificate"],
-            session["certificate_chain"],
+            session.get("end_entity_certificate"),
+            session.get("certificate_chain"),
             hash_algorithm_oid
         )    
     update_session_values(variable_name="hashes", variable_value=hashes)
@@ -214,7 +214,7 @@ def credential_authorization():
     hashes_string = ";".join(hashes)
     
     try:
-        code_verifier, location = qc.oauth2_authorize_credential_request(hashes_string, hash_algorithm_oid, session["credentialID"])
+        code_verifier, location = qc.oauth2_authorize_credential_request(hashes_string, hash_algorithm_oid, session.get("credentialID"))
     except Exception as e:
         return e, 400
 
@@ -227,20 +227,20 @@ def credential_authorization():
 @tester.route('/document/sign', methods=['GET'])
 def upload_document():
     
-    container = session["container"]
-    signature_format = session["signature_format"] 
-    signed_envelope_property = session["signed_envelope_property"]
-    conformance_level = session["conformance_level"]
-    hash_algorithm_oid = session["hash_algorithm_oid"]
+    container = session.get("container")
+    signature_format = session.get("signature_format")
+    signed_envelope_property = session.get("signed_envelope_property")
+    conformance_level = session.get("conformance_level")
+    hash_algorithm_oid = session.get("hash_algorithm_oid")
     
-    file_path = session["filepath"]
+    file_path = session.get("filepath")
     base64_pdf = dm.get_base64_document(file_path)
     
     signatures = qc.csc_v2_signatures_signHash(
-        session["credential_access_token"],
-        session["hashes"],
+        session.get("credential_access_token"),
+        session.get("hashes"),
         hash_algorithm_oid, 
-        session["credentialID"], 
+        session.get("credentialID"), 
         "1.2.840.10045.2.1"
     )
 
@@ -250,11 +250,11 @@ def upload_document():
         conformance_level,
         signed_envelope_property, 
         container, 
-        session["end_entity_certificate"],
-        session["certificate_chain"],
+        session.get("end_entity_certificate"),
+        session.get("certificate_chain"),
         hash_algorithm_oid, 
         signatures, 
-        session["signature_date"]
+        session.get("signature_date")
     )
     
     remove_session_values(variable_name="signature_date")
@@ -266,7 +266,7 @@ def upload_document():
     remove_session_values(variable_name="end_entity_certificate")
     remove_session_values(variable_name="filename")
     
-    documentLocations = session["documentLocations"]
+    documentLocations = session.get("documentLocations")
     if(documentLocations is None):
         new_name = add_suffix_to_filename(os.path.basename(file_path))
         mime_type, _ = mimetypes.guess_type(file_path)    
@@ -274,7 +274,7 @@ def upload_document():
     os.remove(file_path)
     
     if(documentLocations is not None):
-        response_uri = session["response_uri"]
+        response_uri = session.get("response_uri")
         _ = rc.postSignedDocumentResponseURI(response_uri, signed_document_base64)
         remove_session_values("documentLocations")
         remove_session_values("response_uri")
