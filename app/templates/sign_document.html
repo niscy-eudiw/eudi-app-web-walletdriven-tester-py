@@ -7,14 +7,21 @@
       <div class="genericErrors" id="genericErrorsDesc"></div>
 
       <!-- Preview the file -->
+      {% if document_content_type in ["text/plain", "application/json",
+      "application/xml", "application/pdf"] %}
+      <br />
       <iframe
         id="viewer"
         frameborder="0"
         scrolling="auto"
         height="500px"
         width="100%"
-        type="application/pdf"
+        type="{{ document_content_type }}"
       ></iframe>
+      {% elif document_content_type in ["application/vnd.etsi.asic-s+zip",
+      "application/vnd.etsi.asic-e+zip"] %}
+      <br /><em>ZIP files cannot be previewed. Please download.</em>
+      {% endif %}
 
       <div class="download-container">
         <button
