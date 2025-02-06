@@ -101,11 +101,7 @@ def oauth_login_code():
         app.logger.error("Received Error "+error+": "+error_description)
         return error_description, 400
     
-<<<<<<< HEAD
-    code_verifier = session.get("code_verifier")
-=======
     code_verifier = session.get("code_verifier")   
->>>>>>> develop
     
     if(code == None):
         return error_description, 400
@@ -181,10 +177,7 @@ def serve_document(filename):
 @tester.route("/auth/credential", methods=["POST"])
 def credential_authorization():
     documentLocations = session.get("documentLocations")
-<<<<<<< HEAD
-=======
     
->>>>>>> develop
     if(documentLocations is None):
         document = request.files['upload']
         file_path, filename = dm.save_document(document)
@@ -192,17 +185,10 @@ def credential_authorization():
         update_session_values(variable_name="filename", variable_value=filename)
         base64_pdf= base64.b64encode(document.read()).decode("utf-8")
         document.stream.seek(0)
-<<<<<<< HEAD
-       
-    if(documentLocations is not None):
-        filename = session.get("filepath")
-        base64_pdf = dm.get_base64_document(filename)
-=======
     else:
         file_path = session.get("filepath")
         filename = session.get("filename")
         base64_pdf = dm.get_base64_document(file_path)
->>>>>>> develop
         
     form_local= request.form
     container=form_local["container"]
@@ -252,10 +238,7 @@ def upload_document():
     hash_algorithm_oid = session.get("hash_algorithm_oid")
     
     file_path = session.get("filepath")
-<<<<<<< HEAD
-=======
     filename = session.get("filename")
->>>>>>> develop
     base64_pdf = dm.get_base64_document(file_path)
     
     signatures = qc.csc_v2_signatures_signHash(
@@ -292,10 +275,6 @@ def upload_document():
     
     documentLocations = session.get("documentLocations")       
     
-<<<<<<< HEAD
-    documentLocations = session.get("documentLocations")
-=======
->>>>>>> develop
     if(documentLocations is None):
         ext = None
         print(container)
@@ -310,20 +289,7 @@ def upload_document():
             
         new_name = add_suffix_to_filename(os.path.basename(file_path), new_ext=ext)  
     
-<<<<<<< HEAD
-    os.remove(file_path)
-    
-    if(documentLocations is not None):
-        response_uri = session.get("response_uri")
-        _ = rc.postSignedDocumentResponseURI(response_uri, signed_document_base64)
-        remove_session_values("documentLocations")
-        remove_session_values("response_uri")
-        
-        return render_template('sign_document_success.html', redirect_url=cfgserv.service_url)
-    else:
-=======
         os.remove(file_path)
->>>>>>> develop
         return render_template(
             'sign_document.html',
             redirect_url=cfgserv.service_url, 
