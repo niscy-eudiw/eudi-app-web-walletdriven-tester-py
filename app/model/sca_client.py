@@ -18,7 +18,7 @@ from flask import (current_app as app)
 
 # Function that makes a request to the endpoint /calculate_hash do SCA
 # It return a JSON Object with the hash value and the date
-def calculate_hash_request(document, signature_format, conformance_level, signed_envelope_property, container, end_entity_certificate,
+def calculate_hash_request(document, filename, signature_format, conformance_level, signed_envelope_property, container, end_entity_certificate,
                            certificate_chain, hash_algorithm_oid):
     url = cfgserv.SCA+"/signatures/calculate_hash"
     
@@ -30,6 +30,7 @@ def calculate_hash_request(document, signature_format, conformance_level, signed
         "documents": [
             {
                 "document": document,
+                "document_name": filename,
                 "signature_format": signature_format,
                 "conformance_level": conformance_level,
                 "signed_envelope_property": signed_envelope_property,
@@ -58,7 +59,7 @@ def calculate_hash_request(document, signature_format, conformance_level, signed
     
     
      
-def obtain_signed_document(document, signature_format, conformance_level, signed_envelope_property, container, end_entity_certificate,
+def obtain_signed_document(document, filename, signature_format, conformance_level, signed_envelope_property, container, end_entity_certificate,
                            certificate_chain, hash_algorithm_oid, signatures, date):
     url = cfgserv.SCA+"/signatures/obtain_signed_doc"
     
@@ -70,6 +71,7 @@ def obtain_signed_document(document, signature_format, conformance_level, signed
         "documents": [
             {
                 "document": document,
+                "document_name": filename,
                 "signature_format": signature_format,
                 "conformance_level": conformance_level,
                 "signed_envelope_property": signed_envelope_property,
