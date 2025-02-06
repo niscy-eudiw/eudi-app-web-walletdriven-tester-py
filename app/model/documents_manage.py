@@ -34,7 +34,7 @@ def save_document(document):
     file_path = os.path.join(cfgserv.UPLOAD_FOLDER, filename)
     document.save(file_path)
     document.stream.seek(0)
-    return file_path
+    return file_path, filename
 
 ## Function to save a document with a given filename
 ## Returns the path to the saved file and the filename

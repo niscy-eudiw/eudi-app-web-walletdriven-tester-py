@@ -101,7 +101,11 @@ def oauth_login_code():
         app.logger.error("Received Error "+error+": "+error_description)
         return error_description, 400
     
+<<<<<<< HEAD
     code_verifier = session.get("code_verifier")
+=======
+    code_verifier = session.get("code_verifier")   
+>>>>>>> develop
     
     if(code == None):
         return error_description, 400
@@ -114,11 +118,11 @@ def oauth_login_code():
             return e, 400
               
         if(scope == "service"):
-            # remove_session_values(variable_name="code_verifier")    
+            remove_session_values(variable_name="code_verifier")    
             update_session_values(variable_name="service_access_token", variable_value=access_token)
             return redirect(url_for("tester.service_authentication_successful"))
         elif(scope == "credential"):
-            # remove_session_values(variable_name="code_verifier")
+            remove_session_values(variable_name="code_verifier")
             update_session_values(variable_name="credential_access_token", variable_value=access_token)
             return redirect(url_for("tester.upload_document"))
 
@@ -158,7 +162,9 @@ def select_document():
             app.logger.info("Document received from the URI.")
             
             saved_file_path, saved_filename  = dm.save_document_with_name(document, filename)
-            session["filepath"] = saved_file_path
+            update_session_values(variable_name="filepath", variable_value=saved_file_path)
+            update_session_values(variable_name="filename", variable_value=saved_filename)
+            
             app.logger.info("Document saved at "+saved_file_path)
                         
             url = cfgserv.service_url+"/document/"+saved_filename
@@ -175,31 +181,44 @@ def serve_document(filename):
 @tester.route("/auth/credential", methods=["POST"])
 def credential_authorization():
     documentLocations = session.get("documentLocations")
+<<<<<<< HEAD
+=======
+    
+>>>>>>> develop
     if(documentLocations is None):
         document = request.files['upload']
-        filename = dm.save_document(document)
-        session["filepath"] = filename
+        file_path, filename = dm.save_document(document)
+        update_session_values(variable_name="filepath", variable_value=file_path)
+        update_session_values(variable_name="filename", variable_value=filename)
         base64_pdf= base64.b64encode(document.read()).decode("utf-8")
         document.stream.seek(0)
+<<<<<<< HEAD
        
     if(documentLocations is not None):
         filename = session.get("filepath")
         base64_pdf = dm.get_base64_document(filename)
+=======
+    else:
+        file_path = session.get("filepath")
+        filename = session.get("filename")
+        base64_pdf = dm.get_base64_document(file_path)
+>>>>>>> develop
         
     form_local= request.form
     container=form_local["container"]
-    session["container"] = container
+    update_session_values(variable_name="container", variable_value=container)
     signature_format= form_local["signature_format"]
-    session["signature_format"] = signature_format
+    update_session_values(variable_name="signature_format", variable_value=signature_format)
     signed_envelope_property= form_local["packaging"]
-    session["signed_envelope_property"] = signed_envelope_property 
+    update_session_values(variable_name="signed_envelope_property", variable_value=signed_envelope_property)
     conformance_level= form_local["level"]
-    session["conformance_level"] = conformance_level
+    update_session_values(variable_name="conformance_level", variable_value=conformance_level)
     hash_algorithm_oid= form_local["algorithm"]
-    session["hash_algorithm_oid"] = hash_algorithm_oid
+    update_session_values(variable_name="hash_algorithm_oid", variable_value=hash_algorithm_oid)
 
     hashes, signature_date = sc.calculate_hash_request(
             base64_pdf,
+            filename,
             signature_format,
             conformance_level,
             signed_envelope_property,
@@ -220,7 +239,6 @@ def credential_authorization():
 
     update_session_values(variable_name="code_verifier", variable_value=code_verifier)
 
-
     return render_template('credential_authorization.html', redirect_url=cfgserv.service_url, location=location, env_var=env_var)
 
 # Requests to the backend servers
@@ -234,6 +252,10 @@ def upload_document():
     hash_algorithm_oid = session.get("hash_algorithm_oid")
     
     file_path = session.get("filepath")
+<<<<<<< HEAD
+=======
+    filename = session.get("filename")
+>>>>>>> develop
     base64_pdf = dm.get_base64_document(file_path)
     
     signatures = qc.csc_v2_signatures_signHash(
@@ -246,6 +268,7 @@ def upload_document():
 
     signed_document_base64 = sc.obtain_signed_document(
         base64_pdf, 
+        filename,
         signature_format, 
         conformance_level,
         signed_envelope_property, 
@@ -265,12 +288,29 @@ def upload_document():
     remove_session_values(variable_name="certificate_chain")
     remove_session_values(variable_name="end_entity_certificate")
     remove_session_values(variable_name="filename")
+    remove_session_values(variable_name="filepath")
     
+    documentLocations = session.get("documentLocations")       
+    
+<<<<<<< HEAD
     documentLocations = session.get("documentLocations")
+=======
+>>>>>>> develop
     if(documentLocations is None):
-        new_name = add_suffix_to_filename(os.path.basename(file_path))
-        mime_type, _ = mimetypes.guess_type(file_path)    
+        ext = None
+        print(container)
+        if(container == "ASiC-S"):
+            mime_type = "application/vnd.etsi.asic-s+zip"
+            ext = ".zip"
+        elif(container == "ASiC-E"):
+            mime_type = "application/vnd.etsi.asic-e+zip"
+            ext = ".zip"
+        else:
+            mime_type, _ = mimetypes.guess_type(file_path)
+            
+        new_name = add_suffix_to_filename(os.path.basename(file_path), new_ext=ext)  
     
+<<<<<<< HEAD
     os.remove(file_path)
     
     if(documentLocations is not None):
@@ -281,6 +321,9 @@ def upload_document():
         
         return render_template('sign_document_success.html', redirect_url=cfgserv.service_url)
     else:
+=======
+        os.remove(file_path)
+>>>>>>> develop
         return render_template(
             'sign_document.html',
             redirect_url=cfgserv.service_url, 
@@ -288,6 +331,16 @@ def upload_document():
             document_content_type=mime_type,
             document_filename=new_name
         )
+    else:
+        os.remove(file_path)
+
+        response_uri = session.get("response_uri")
+        _ = rc.postSignedDocumentResponseURI(response_uri, signed_document_base64)
+        remove_session_values("documentLocations")
+        remove_session_values("response_uri")
+        
+        return render_template('sign_document_success.html', redirect_url=cfgserv.service_url)
+    
 
 
 def update_session_values(variable_name, variable_value):
@@ -300,6 +353,10 @@ def remove_session_values(variable_name):
     if(session.get(variable_name) is not None):
         session.pop(variable_name)
 
-def add_suffix_to_filename(filename, suffix="_signed"):
+def add_suffix_to_filename(filename, suffix="_signed", new_ext = None):
     name, ext = os.path.splitext(filename)
+    
+    if(new_ext is not None):
+        return f"{name}{suffix}{new_ext}"
+    
     return f"{name}{suffix}{ext}"
