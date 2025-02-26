@@ -1,30 +1,28 @@
-import requests, jwt, re, json
-
+import requests, jwt, re
 from app_config.config import ConfService as cfgserv
 
 algorithm = cfgserv.algorithm
 
-def getRequestObjectFromRP(request_uri, client_id):
-    
+def get_request_object_from_rp(request_uri, client_id):
     jwt_object = requests.get(request_uri)
     print(jwt_object)
     request_object_decoded = jwt.decode(jwt_object.text, algorithm, options={"verify_signature": False})
     
-    response_uri_l = request_object_decoded["response_uri"]
-    documentDigests = request_object_decoded["documentDigests"]
-    hashAlgorithmOID_l = request_object_decoded["hashAlgorithmOID"]
-    documentLocations_l = request_object_decoded["documentLocations"]
+    response_uri = request_object_decoded["response_uri"]
+    document_digests = request_object_decoded["documentDigests"]
+    hash_algorithm_oid = request_object_decoded["hashAlgorithmOID"]
+    document_locations = request_object_decoded["documentLocations"]
     
-    return response_uri_l, documentDigests, hashAlgorithmOID_l, documentLocations_l
+    return response_uri, document_digests, hash_algorithm_oid, document_locations
 
-def getFilenameFromURI(uri):
+def get_filename_from_uri(uri):
     match = re.search(r'/document/([^/]+)$', uri)
     if not match:
         raise ValueError("Invalid URI: Unable to extract filename")
     return match.group(1)
 
-def getDocumentFromURI(uri):
-    filename = getFilenameFromURI(uri)
+def get_document_from_uri(uri):
+    filename = get_filename_from_uri(uri)
     document = requests.get(uri, stream=True)
     
     if document.status_code != 200:
@@ -32,13 +30,18 @@ def getDocumentFromURI(uri):
     
     return document.content, filename
 
-def postSignedDocumentResponseURI(response_uri, signed_document):   
-    payload = json.dumps({
-        "documentWithSignature": signed_document
-    })
-    
+def post_signed_document_response_uri(response_uri, signed_document, packaging):
+    if packaging == "DETACHED":
+        payload = {
+            "signatureObject": signed_document
+        }
+    else:
+        payload = {
+            "documentWithSignature": signed_document
+        }
+
     headers = {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/x-www-form-urlencoded'
     }
     
     print(payload)

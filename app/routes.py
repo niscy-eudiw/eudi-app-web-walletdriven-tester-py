@@ -51,6 +51,8 @@ DIGEST_OIDS = {
     "sha3_512": "2.16.840.1.101.3.4.2.10",
 }
 
+global code_verifier, documentLocations, response_uri
+
 @tester.route('/', methods=['GET'])
 def main():
     return render_template('main.html', redirect_url= cfgserv.service_url)
@@ -60,15 +62,20 @@ def getRelyingPartyService():
     request_uri = request.args.get("request_uri")
     client_id = request.args.get("client_id")
     
-    response_uri, _, hashAlgorithmOID, documentLocations = rc.getRequestObjectFromRP(request_uri, client_id)
+    response_uri_l, _, hash_algorithm_oid, document_locations = rc.get_request_object_from_rp(request_uri, client_id)
     
-    update_session_values("response_uri", response_uri)
-    update_session_values("hash_algorithm_oid", hashAlgorithmOID)
-    update_session_values("documentLocations", documentLocations)
+    update_session_values("response_uri", response_uri_l)
+    update_session_values("hash_algorithm_oid", hash_algorithm_oid)
+    update_session_values("documentLocations", document_locations)
+    global documentLocations
+    documentLocations = document_locations
+
+    global response_uri
+    response_uri = response_uri_l
     
     return redirect(url_for("tester.service_authentication"))
 
-# starts the authentication process throught the /oauth2/authorize and receives the link to the wallet
+# starts the authentication process through the /oauth2/authorize and receives the link to the wallet
 @tester.route('/auth/service', methods=['GET'])
 def service_authentication():
     app.logger.info("Starting the authentication process.")
@@ -80,6 +87,8 @@ def service_authentication():
         return str, 400
 
     update_session_values(variable_name="code_verifier", variable_value=code_verifier_local)
+    global code_verifier
+    code_verifier = code_verifier_local
 
     app.logger.info("Displaying the authentication page.")
 
@@ -96,31 +105,37 @@ def oauth_login_code():
     state = request.args.get("state")
     error = request.args.get("error")
     error_description=request.args.get("error_description")
-    app.logger.info("Received request with code: "+str(code) + "and state "+str(state))
-    if(error is not None):
-        app.logger.error("Received Error "+error+": "+error_description)
-        return error_description, 400
     
-    code_verifier = session.get("code_verifier")   
+    app.logger.info("Received request with code: %s and state: %s", code, state)
     
-    if(code == None):
-        return error_description, 400
+    if error:
+        app.logger.error("Received Error %s: %s", error, error_description)
+        return render_template('500.html', error= error+": "+error_description)
     
-    else:
-        try:
-            app.logger.info("Requesting token with code: "+code+" and code_verifier: "+code_verifier)
-            scope, access_token = qc.oauth2_token_request(code, code_verifier) # trades the code for the access token
-        except Exception as e:
-            return e, 400
+    # code_verifier = session.get("code_verifier")
+    if code_verifier is None:
+        app.logger.error("Session key 'code_verifier' is missing.")
+        return render_template('500.html', error="Session expired or invalid request.")
+    
+    if code is None:
+        app.logger.error("No authorization code received.")
+        return render_template('500.html', error="Missing authorization code.")
+    
+    try:
+        app.logger.info("Requesting token with code: "+code+" and code_verifier: "+code_verifier)
+        scope, access_token = qc.oauth2_token_request(code, code_verifier) # trades the code for the access token
+    except Exception as e:
+        app.logger.error("Error during OAuth token request: %s", str(e), exc_info=True)
+        return render_template('500.html', error="OAuth token request failed.")
               
-        if(scope == "service"):
-            remove_session_values(variable_name="code_verifier")    
-            update_session_values(variable_name="service_access_token", variable_value=access_token)
-            return redirect(url_for("tester.service_authentication_successful"))
-        elif(scope == "credential"):
-            remove_session_values(variable_name="code_verifier")
-            update_session_values(variable_name="credential_access_token", variable_value=access_token)
-            return redirect(url_for("tester.upload_document"))
+    if(scope == "service"):
+        remove_session_values(variable_name="code_verifier")    
+        update_session_values(variable_name="service_access_token", variable_value=access_token)
+        return redirect(url_for("tester.service_authentication_successful"))
+    elif(scope == "credential"):
+        remove_session_values(variable_name="code_verifier")
+        update_session_values(variable_name="credential_access_token", variable_value=access_token)
+        return redirect(url_for("tester.upload_document"))
 
 @tester.route("/credentials/list", methods=["GET"])
 def list_credentials():
@@ -129,12 +144,12 @@ def list_credentials():
 
 @tester.route("/credentials/select", methods=["POST"])
 def select_credential():
-    credentialId = request.get_json().get("credentialID")
-    app.logger.info("Selected credential: "+credentialId)
-    update_session_values(variable_name="credentialID", variable_value=credentialId)
+    credential_id = request.get_json().get("credentialID")
+    app.logger.info("Selected credential: "+credential_id)
+    update_session_values(variable_name="credentialID", variable_value=credential_id)
     
     app.logger.info("Requesting information about the selected credential.")
-    certificates, key_algos = qc.csc_v2_credentials_info(session.get("service_access_token"), credentialId)
+    certificates, key_algos = qc.csc_v2_credentials_info(session.get("service_access_token"), credential_id)
     
     update_session_values(variable_name="end_entity_certificate", variable_value=certificates[0])
     update_session_values(variable_name="certificate_chain", variable_value=certificates[1])
@@ -148,13 +163,13 @@ def select_document():
     hash_algos = []
     for algo in key_algos:
         hash_algo = _SIG_OIDS_TO_HASH.get(ObjectIdentifier(algo))
-        if(hash_algo is not None):
+        if hash_algo is not None:
             hash_algos.append({"name":hash_algo.name.upper(), "oid":DIGEST_OIDS.get(hash_algo.name.lower())})
     
-    documentLocations = session.get("documentLocations")
-    if(documentLocations is not None):
+    # documentLocations = session.get("documentLocations")
+    if documentLocations is not None:
         for loc in documentLocations:
-            document, filename = rc.getDocumentFromURI(loc['uri'])
+            document, filename = rc.get_document_from_uri(loc['uri'])
             app.logger.info("Document received from the URI.")
             
             saved_file_path, saved_filename  = dm.save_document_with_name(document, filename)
@@ -176,9 +191,9 @@ def serve_document(filename):
 
 @tester.route("/auth/credential", methods=["POST"])
 def credential_authorization():
-    documentLocations = session.get("documentLocations")
+    #documentLocations = session.get("documentLocations")
     
-    if(documentLocations is None):
+    if documentLocations is None:
         document = request.files['upload']
         file_path, filename = dm.save_document(document)
         update_session_values(variable_name="filepath", variable_value=file_path)
@@ -219,18 +234,19 @@ def credential_authorization():
     hashes_string = ";".join(hashes)
     
     try:
-        code_verifier, location = qc.oauth2_authorize_credential_request(hashes_string, hash_algorithm_oid, session.get("credentialID"))
+        code_verifier_l, location = qc.oauth2_authorize_credential_request(hashes_string, hash_algorithm_oid, session.get("credentialID"))
     except Exception as e:
         return e, 400
 
-    update_session_values(variable_name="code_verifier", variable_value=code_verifier)
+    update_session_values(variable_name="code_verifier", variable_value=code_verifier_l)
+    global code_verifier
+    code_verifier = code_verifier_l
 
     return render_template('credential_authorization.html', redirect_url=cfgserv.service_url, location=location, env_var=env_var)
 
 # Requests to the backend servers
 @tester.route('/document/sign', methods=['GET'])
 def upload_document():
-    
     container = session.get("container")
     signature_format = session.get("signature_format")
     signed_envelope_property = session.get("signed_envelope_property")
@@ -273,15 +289,14 @@ def upload_document():
     remove_session_values(variable_name="filename")
     remove_session_values(variable_name="filepath")
     
-    documentLocations = session.get("documentLocations")       
+    # documentLocations = session.get("documentLocations")
     
-    if(documentLocations is None):
+    if documentLocations is None:
         ext = None
-        print(container)
-        if(container == "ASiC-S"):
+        if container == "ASiC-S":
             mime_type = "application/vnd.etsi.asic-s+zip"
             ext = ".zip"
-        elif(container == "ASiC-E"):
+        elif container == "ASiC-E":
             mime_type = "application/vnd.etsi.asic-e+zip"
             ext = ".zip"
         else:
@@ -299,9 +314,9 @@ def upload_document():
         )
     else:
         os.remove(file_path)
-
-        response_uri = session.get("response_uri")
-        _ = rc.postSignedDocumentResponseURI(response_uri, signed_document_base64)
+        documents_with_signature = [signed_document_base64]
+        # response_uri = session.get("response_uri")
+        _ = rc.post_signed_document_response_uri(response_uri, documents_with_signature, signed_envelope_property)
         remove_session_values("documentLocations")
         remove_session_values("response_uri")
         

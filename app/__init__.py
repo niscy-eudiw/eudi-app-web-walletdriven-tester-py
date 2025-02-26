@@ -22,7 +22,7 @@ Handles application setup, configuration, and exception handling.
 """
 
 import os
-import sys
+import sys, logging
 
 from flask import Flask, render_template
 from flask_session import Session
@@ -55,6 +55,8 @@ def page_not_found(e):
 def create_app():
     app = Flask(__name__, instance_relative_config=True, static_url_path='/tester/static')
     app.config['SECRET_KEY'] = ConfService.secret_key
+    
+    app.logger.setLevel(logging.INFO)
 
     # Register error handlers
     app.register_error_handler(404, page_not_found)
@@ -78,5 +80,5 @@ def create_app():
     Session(app)
 
     # CORS is a mechanism implemented by browsers to block requests from domains other than the server's one.
-    CORS(app, supports_credentials=True, resources={r"/tester/*": {"origins": ConfService.AS}})
+    CORS(app, supports_credentials=True)
     return app

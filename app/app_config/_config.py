@@ -21,6 +21,9 @@ This config.py contains configuration data.
 
 class ConfService:
     secret_key = "secret_here"
+    algorithm = "HS256"
+
+    UPLOAD_FOLDER = 'app/documents'
 
     service_url = "rp_web_page_here"
     AS="qtsp_as_url_here"
