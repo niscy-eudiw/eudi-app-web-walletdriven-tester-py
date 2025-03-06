@@ -1,0 +1,349 @@
+{% extends 'base.html' %} {% block content %}
+<div class="container-fluid h-100">
+  <div class="content-box col-md-11 mx-auto text-center">
+    <div class="genericErrors" id="genericErrorsDesc"></div>
+
+    <h1>Sign Documents</h1>
+
+    <form
+      id="options-form"
+      method="post"
+      action="{{ url_for('tester.credential_authorization') }}"
+      accept-charset="UTF-8"
+      enctype="multipart/form-data"
+      autocapitalize="off"
+      spellcheck="false"
+      style="padding-top: 10px"
+    >
+      <h2>Step 1: Select Document</h2>
+      <div
+        class="form-check col-md-12 d-flex justify-content-center align-items-center"
+      >
+        <label
+          class="btn sign-custom-btn"
+          style="width: fit-content"
+          for="filename"
+        >
+          Choose Document
+        </label>
+        <input type="file" name="upload" id="filename" style="display: none" />
+      </div>
+      <iframe
+        id="viewer"
+        frameborder="0"
+        scrolling="auto"
+        height="500px"
+        width="100%"
+        type="application/pdf"
+        style="border: 1px solid #ccc; margin-top: 10px"
+      ></iframe>
+
+      <h2 style="margin-top: 10px">Step 2: Select Signature Options</h2>
+
+      <!--Container-->
+      <div class="col-md-12 signature-options">
+        <p class="legend">Container:</p>
+        <div class="form-group">
+          <label class="radio-inline">
+            <input
+              type="radio"
+              name="container"
+              value="No"
+              onchange="onChangeContainer(this.value)"
+              checked
+            />
+            No
+          </label>
+          <label class="radio-inline">
+            <input
+              type="radio"
+              name="container"
+              value="ASiC-S"
+              onchange="onChangeContainer(this.value)"
+            />
+            ASiC-S
+          </label>
+          <label class="radio-inline">
+            <input
+              type="radio"
+              name="container"
+              value="ASiC-E"
+              onchange="onChangeContainer(this.value)"
+            />
+            ASiC-E
+          </label>
+        </div>
+      </div>
+
+      <!--Signature Format-->
+      <div class="col-md-12 signature-options">
+        <p class="legend">Signature Format:</p>
+        <div class="form-group">
+          <label class="radio-inline">
+            <input
+              type="radio"
+              id="XAdES"
+              name="signature_format"
+              value="X"
+              onchange="onChangeSignatureFormat(this.value)"
+              required
+            />
+            XAdES
+          </label>
+          <label class="radio-inline">
+            <input
+              type="radio"
+              id="CAdES"
+              name="signature_format"
+              value="C"
+              onchange="onChangeSignatureFormat(this.value)"
+            />
+            CAdES
+          </label>
+          <label class="radio-inline">
+            <input
+              type="radio"
+              id="PAdES"
+              name="signature_format"
+              value="P"
+              onchange="onChangeSignatureFormat(this.value)"
+            />
+            PAdES
+          </label>
+          <label class="radio-inline">
+            <input
+              type="radio"
+              id="JAdES"
+              name="signature_format"
+              value="J"
+              onchange="onChangeSignatureFormat(this.value)"
+            />
+            JAdES
+          </label>
+        </div>
+      </div>
+
+      <!--Packaging-->
+      <div class="col-md-12 signature-options">
+        <p class="legend">Packaging</p>
+        <div class="form-group">
+          <label class="radio-inline">
+            <input
+              type="radio"
+              id="enveloped"
+              name="packaging"
+              value="ENVELOPED"
+              required
+            />
+            Enveloped
+          </label>
+          <label class="radio-inline">
+            <input
+              type="radio"
+              id="enveloping"
+              name="packaging"
+              value="ENVELOPING"
+            />
+            Enveloping
+          </label>
+          <label class="radio-inline">
+            <input
+              type="radio"
+              id="detached"
+              name="packaging"
+              value="DETACHED"
+            />
+            Detached
+          </label>
+          <label class="radio-inline">
+            <input
+              type="radio"
+              id="internally"
+              name="packaging"
+              value="INTERNALLY_DETACHED"
+            />
+            Internally detached
+          </label>
+        </div>
+      </div>
+
+      <!--Level-->
+      <div class="col-md-12 signature-options">
+        <p class="legend">Level:</p>
+        <label
+          ><input
+            type="radio"
+            name="level"
+            value="Ades-B-B"
+            checked
+          />BASELINE-B</label
+        >
+        <label
+          ><input type="radio" name="level" value="Ades-B-T" />BASELINE-T</label
+        >
+        <label
+          ><input
+            type="radio"
+            name="level"
+            value="Ades-B-LT"
+          />BASELINE-LT</label
+        >
+        <label
+          ><input
+            type="radio"
+            name="level"
+            value="Ades-B-LTA"
+          />BASELINE-LTA</label
+        >
+      </div>
+
+      <!--Digest Algorithm-->
+      <div class="col-md-12 signature-options">
+        <p class="legend">Digest Algorith:</p>
+        {% for algorithm in digest_algorithms %}
+        <label class="radio-inline">
+          <input
+            type="radio"
+            name="algorithm"
+            value="{{ algorithm.oid }}"
+            {%
+            if
+            loop.first
+            %}checked{%
+            endif
+            %}
+          />
+          {{ algorithm.name }}
+        </label>
+        {% endfor %}
+      </div>
+
+      <button type="submit" class="btn btn-primary">Continue</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function deselectPackaging() {
+    console.log("deselectPackaging...");
+    if (document.getElementById("enveloped").disabled === false)
+      document.getElementById("enveloped").checked = false;
+    if (document.getElementById("enveloping").disabled === false)
+      document.getElementById("enveloping").checked = false;
+    if (document.getElementById("detached").disabled === false)
+      document.getElementById("detached").checked = false;
+    if (document.getElementById("internally").disabled === false)
+      document.getElementById("internally").checked = false;
+  }
+
+  function deselectSignatureFormat() {
+    console.log("deselectSignatureFormat...");
+    if (document.getElementById("XAdES").disabled === false)
+      document.getElementById("XAdES").checked = false;
+    if (document.getElementById("CAdES").disabled === false)
+      document.getElementById("CAdES").checked = false;
+    if (document.getElementById("PAdES").disabled === false)
+      document.getElementById("PAdES").checked = false;
+    if (document.getElementById("JAdES").disabled === false)
+      document.getElementById("JAdES").checked = false;
+  }
+
+  function onChangeContainer(value) {
+    deselectSignatureFormat();
+    deselectPackaging();
+
+    console.log("Updating the signature format available...");
+
+    if (value === "No") {
+      document.getElementById("XAdES").disabled = false;
+      document.getElementById("CAdES").disabled = false;
+      document.getElementById("PAdES").disabled = false;
+      document.getElementById("JAdES").disabled = false;
+    } else if (value === "ASiC-S" || value === "ASiC-E") {
+      document.getElementById("XAdES").disabled = false;
+      document.getElementById("CAdES").disabled = false;
+      document.getElementById("PAdES").disabled = true;
+      document.getElementById("JAdES").disabled = true;
+    }
+  }
+
+  function onChangeSignatureFormat(value) {
+    deselectPackaging();
+
+    let form = document.getElementById("options-form");
+    var container = form.querySelector("input[name='container']:checked");
+
+    console.log("Updating the packaging available...");
+    if (value === "X") {
+      console.log("XAdES selected...");
+
+      if (container.value === "ASiC-S" || container.value === "ASiC-E") {
+        document.getElementById("enveloped").disabled = true;
+        document.getElementById("enveloping").disabled = true;
+        document.getElementById("detached").disabled = false;
+        document.getElementById("internally").disabled = true;
+      } else {
+        document.getElementById("enveloped").disabled = false;
+        document.getElementById("enveloping").disabled = false;
+        document.getElementById("detached").disabled = false;
+        document.getElementById("internally").disabled = false;
+      }
+    } else if (value === "C") {
+      console.log("CAdES selected...");
+
+      if (container.value === "ASiC-S" || container.value === "ASiC-E") {
+        document.getElementById("enveloped").disabled = true;
+        document.getElementById("enveloping").disabled = true;
+        document.getElementById("detached").disabled = false;
+        document.getElementById("internally").disabled = true;
+      } else {
+        document.getElementById("enveloped").disabled = true;
+        document.getElementById("enveloping").disabled = false;
+        document.getElementById("detached").disabled = false;
+        document.getElementById("internally").disabled = true;
+      }
+    } else if (value === "P") {
+      console.log("PAdES selected...");
+      document.getElementById("enveloped").disabled = false;
+      document.getElementById("enveloping").disabled = true;
+      document.getElementById("detached").disabled = true;
+      document.getElementById("internally").disabled = true;
+    } else if (value === "J") {
+      console.log("JAdES selected...");
+      document.getElementById("enveloped").disabled = true;
+      document.getElementById("enveloping").disabled = false;
+      document.getElementById("detached").disabled = false;
+      document.getElementById("internally").disabled = true;
+    }
+  }
+
+  document.getElementById("filename").addEventListener("change", (event) => {
+    let input = event.target;
+    let path = input.value;
+    let file = input.files[0];
+    var fileURL = URL.createObjectURL(file);
+    document.getElementById("viewer").src = fileURL;
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    let form = document.getElementById("options-form");
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      let formData = new FormData(this);
+      fetch(this.action, {
+        method: "POST",
+        body: formData,
+      })
+        .then((response) => {
+          window.location.href =
+            "{{ url_for('tester.credential_authorization_page') }}";
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("Error submitting the form.");
+        });
+    });
+  });
+</script>
+
+{% endblock %}

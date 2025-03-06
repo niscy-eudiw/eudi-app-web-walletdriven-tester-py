@@ -18,25 +18,17 @@ from flask import (current_app as app)
 
 # Function that makes a request to the endpoint /calculate_hash do SCA
 # It return a JSON Object with the hash value and the date
-def calculate_hash_request(document, filename, signature_format, conformance_level, signed_envelope_property, container, end_entity_certificate,
-                           certificate_chain, hash_algorithm_oid):
+def calculate_hash_request(documents, filenames, forms, end_entity_certificate, certificate_chain, hash_algorithm_oid):
     url = cfgserv.SCA+"/signatures/calculate_hash"
-    
+
+    documents_list = get_document_list(documents, filenames, forms)
+
     headers = {
         'Content-Type': 'application/json'
     }
     
     payload = json.dumps({
-        "documents": [
-            {
-                "document": document,
-                "document_name": filename,
-                "signature_format": signature_format,
-                "conformance_level": conformance_level,
-                "signed_envelope_property": signed_envelope_property,
-                "container": container
-            }
-        ],
+        "documents": documents_list,
         "endEntityCertificate": end_entity_certificate,
         "certificateChain": [
             certificate_chain
@@ -45,7 +37,7 @@ def calculate_hash_request(document, filename, signature_format, conformance_lev
     })
 
     response = requests.post(url , headers=headers, data=payload)
-    if(response.status_code == 200):
+    if response.status_code == 200:
         calculate_hash_json = response.json()
         hashes = calculate_hash_json["hashes"]
         signature_date = calculate_hash_json["signature_date"]
@@ -57,9 +49,24 @@ def calculate_hash_request(document, filename, signature_format, conformance_lev
         app.logger.error(message)
         raise Exception("It was impossible to retrieve the authentication link: "+message)
     
-    
+def get_document_list(documents, filenames, forms):
+    documents_list = []
+    for document, filename, form in zip(documents, filenames, forms):
+        container = form["container"]
+        signature_format = form["signature_format"]
+        signed_envelope_property = form["packaging"]
+        conformance_level = form["level"]
+        documents_list.append({
+            "document": document,
+            "document_name": filename,
+            "signature_format": signature_format,
+            "conformance_level": conformance_level,
+            "signed_envelope_property": signed_envelope_property,
+            "container": container
+        })
+    return documents_list
      
-def obtain_signed_document(document, filename, signature_format, conformance_level, signed_envelope_property, container, end_entity_certificate,
+def obtain_signed_document(documents, filenames, forms, end_entity_certificate,
                            certificate_chain, hash_algorithm_oid, signatures, date):
     url = cfgserv.SCA+"/signatures/obtain_signed_doc"
     
@@ -67,17 +74,11 @@ def obtain_signed_document(document, filename, signature_format, conformance_lev
         'Content-Type': 'application/json'
     }
 
+    documents_list = get_document_list(documents, filenames, forms)
+    print(documents_list)
+
     payload = json.dumps({
-        "documents": [
-            {
-                "document": document,
-                "document_name": filename,
-                "signature_format": signature_format,
-                "conformance_level": conformance_level,
-                "signed_envelope_property": signed_envelope_property,
-                "container": container
-            }
-        ],
+        "documents": documents_list,
         "hashAlgorithmOID": hash_algorithm_oid,
         "returnValidationInfo": False,
         "endEntityCertificate": end_entity_certificate,
@@ -89,9 +90,9 @@ def obtain_signed_document(document, filename, signature_format, conformance_lev
     })
     
     response = requests.post(url, headers=headers, data=payload)
-    if(response.status_code == 200):
+    if response.status_code == 200:
         app.logger.info("Successfully retrieved the signed document.")
-        return response.json()["documentWithSignature"][0]
+        return response.json()["documentWithSignature"]
     
     else:
         message = response.json()["message"]
