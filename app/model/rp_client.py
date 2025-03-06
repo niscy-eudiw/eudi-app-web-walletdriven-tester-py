@@ -30,15 +30,21 @@ def get_document_from_uri(uri):
     
     return document.content, filename
 
-def post_signed_document_response_uri(response_uri, signed_document, packaging):
-    if packaging == "DETACHED":
-        payload = {
-            "signatureObject": signed_document
-        }
-    else:
-        payload = {
-            "documentWithSignature": signed_document
-        }
+def post_signed_document_response_uri(response_uri, signed_documents, packagings):
+    payload = {}
+    signature_objects = []
+    documents_with_signature = []
+
+    for doc, packaging in zip(signed_documents, packagings):
+        if packaging == "DETACHED":
+            signature_objects.append(doc)
+        else:
+            documents_with_signature.append(doc)
+
+    if len(signature_objects) > 0:
+        payload.update({"signatureObject": signature_objects})
+    if len(documents_with_signature) > 0:
+        payload.update({"documentWithSignature": documents_with_signature})
 
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded'

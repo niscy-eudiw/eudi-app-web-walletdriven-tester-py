@@ -7,63 +7,17 @@
       <div class="genericErrors" id="genericErrorsDesc"></div>
 
       <!-- Preview the file -->
-      {% if document_content_type in ["text/plain", "application/json",
-      "application/xml", "application/pdf"] %}
-      <br />
-      <iframe
-        id="viewer"
-        frameborder="0"
-        scrolling="auto"
-        height="500px"
-        width="100%"
-        type="{{ document_content_type }}"
-      ></iframe>
-      {% elif document_content_type in ["application/vnd.etsi.asic-s+zip",
-      "application/vnd.etsi.asic-e+zip"] %}
-      <br /><em>ZIP files cannot be previewed. Please download.</em>
-      {% endif %}
-
-      <div class="download-container">
-        <button
-          class="sign-custom-btn"
-          id="download_button"
-          onclick="downloadPDF()"
-        >
-          <!--<i class="fa fa-download"></i>-->
-          Download
-        </button>
+      {% for document_content_type, document_signed_value, document_filename in signed_doc %} {% include 'single-signed-doc.html' %} {% endfor %}
 
         <a
           class="sign-custom-btn"
           href="{{ url_for('tester.service_authentication') }}"
           >Close</a
         >
-      </div>
     </div>
   </div>
 </div>
 
-<script>
-  let document_signed_value = "{{ document_signed_value }}";
-  let document_content_type = "{{ document_content_type }}";
-  let document_filename = "{{ document_filename }}";
 
-  function downloadPDF(pdf) {
-    const linkSource = `data:${document_content_type};base64,${document_signed_value}`;
-    const downloadLink = document.createElement("a");
-    downloadLink.href = linkSource;
-    downloadLink.download = document_filename;
-    downloadLink.click();
-  }
-
-  function loadDocumentViewer() {
-    // Create a Blob object from the byte array
-    const linkSource = `data:${document_content_type};base64,${document_signed_value}`;
-    document.getElementById("viewer").src = linkSource;
-    document.getElementById("btncheck").disabled = false;
-  }
-
-  window.onload = loadDocumentViewer();
-</script>
 
 {% endblock %}

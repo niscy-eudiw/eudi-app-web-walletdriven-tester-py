@@ -1,339 +1,47 @@
 {% extends 'base.html' %} {% block content %}
-<div class="row" style="height: 100%">
-  <div class="col-lg-12" style="height: 100%">
-    <div id="content" class="content-box col-md-11">
-      <div class="genericErrors" id="genericErrorsDesc"></div>
+<div class="container-fluid h-100">
+  <div class="content-box col-md-11 mx-auto text-center">
+    <div class="genericErrors" id="genericErrorsDesc"></div>
 
-      <h1>Sign Document</h1>
+    <h1>Sign Documents</h1>
 
-      <form
-        method="post"
-        action="{{ url_for('tester.credential_authorization') }}"
-        accept-charset="UTF-8"
-        enctype="multipart/form-data"
-        autocapitalize="off"
-        spellcheck="false"
-        style="padding-top: 10px"
-      >
-        {% if mode == "upload" %}
-        <h2>Step 1: Select Document</h2>
-        <div
-          class="form-check col-md-12 d-flex justify-content-center align-items-center"
-        >
-          <label
-            class="btn sign-custom-btn"
-            style="width: fit-content"
-            for="filename"
-          >
-            Choose Document
-          </label>
-          <input
-            type="file"
-            name="upload"
-            id="filename"
-            style="display: none"
-          />
-        </div>
+    {% for url, filename in docs_infos %}
+      {% include 'single-doc-option.html' with context %}
+    {% endfor %}
 
-        <iframe
-          id="viewer"
-          frameborder="0"
-          scrolling="auto"
-          height="500px"
-          width="100%"
-          type="application/pdf"
-          style="border: 1px solid #ccc; margin-top: 10px"
-        ></iframe>
-        {% elif mode == "view" %}
-        <h2>Step 1: Confirm Document Received</h2>
-        <iframe
-          id="viewer"
-          frameborder="0"
-          scrolling="auto"
-          height="500px"
-          width="100%"
-          src="{{ file_url }}"
-          type="application/pdf"
-          style="border: 1px solid #ccc; margin-top: 10px"
-        ></iframe>
-        {% endif %}
-
-        <h2 style="margin-top: 10px">Step 2: Select Signature Options</h2>
-
-        <div class="col-md-12 signature-options">
-          <h3>Container</h3>
-          <div class="form-group">
-            <label class="radio-inline">
-              <input type="radio" id="No" name="container" value="No" checked />
-              No
-            </label>
-            <label class="radio-inline">
-              <input type="radio" id="ASiC-S" name="container" value="ASiC-S" />
-              ASiC-S
-            </label>
-            <label class="radio-inline">
-              <input type="radio" id="ASiC-E" name="container" value="ASiC-E" />
-              ASiC-E
-            </label>
-          </div>
-        </div>
-        <div class="col-md-12 signature-options">
-          <h3>Signature format</h3>
-          <div class="form-group">
-            <label class="radio-inline">
-              <input
-                type="radio"
-                id="XAdES"
-                name="signature_format"
-                value="X"
-                required
-              />
-              XAdES
-            </label>
-            <label class="radio-inline">
-              <input
-                type="radio"
-                id="CAdES"
-                name="signature_format"
-                value="C"
-              />
-              CAdES
-            </label>
-            <label class="radio-inline">
-              <input
-                type="radio"
-                id="PAdES"
-                name="signature_format"
-                value="P"
-              />
-              PAdES
-            </label>
-            <label class="radio-inline">
-              <input
-                type="radio"
-                id="JAdES"
-                name="signature_format"
-                value="J"
-              />
-              JAdES
-            </label>
-          </div>
-        </div>
-        <div class="col-md-12 signature-options">
-          <h3>Packaging</h3>
-          <div class="form-group">
-            <label class="radio-inline">
-              <input
-                type="radio"
-                id="enveloped"
-                name="packaging"
-                value="ENVELOPED"
-                disabled
-                required
-              />
-              Enveloped
-            </label>
-            <label class="radio-inline">
-              <input
-                type="radio"
-                id="enveloping"
-                name="packaging"
-                value="ENVELOPING"
-                disabled
-              />
-              Enveloping
-            </label>
-            <label class="radio-inline">
-              <input
-                type="radio"
-                id="detached"
-                name="packaging"
-                value="DETACHED"
-                disabled
-              />
-              Detached
-            </label>
-            <label class="radio-inline">
-              <input
-                type="radio"
-                id="internally"
-                name="packaging"
-                value="INTERNALLY_DETACHED"
-                disabled
-              />
-              Internally detached
-            </label>
-          </div>
-        </div>
-        <div class="col-md-12 signature-options">
-          <h3>Level</h3>
-          <select id="select" class="form-control" name="level"></select>
-        </div>
-        <div class="col-md-12 signature-options">
-          <h3>Digest algorithm</h3>
-          <div class="form-group">
-            {% for algorithm in digest_algorithms %}
-            <label class="radio-inline">
-              <input
-                type="radio"
-                id="inlineCheckbox1"
-                name="algorithm"
-                value="{{ algorithm.oid }}"
-                {%
-                if
-                loop.first
-                %}checked{%
-                endif
-                %}
-              />
-              {{ algorithm.name }}
-            </label>
-            {% endfor %}
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary">Continue</button>
-      </form>
-    </div>
+    <button class="btn custom-btn" onclick="onClick()">Continue</button>
   </div>
 </div>
 
-<script type="text/javascript">
-  let XAdES = document.getElementById("XAdES");
-  let CAdES = document.getElementById("CAdES");
-  let PAdES = document.getElementById("PAdES");
-  let JAdES = document.getElementById("JAdES");
+<script>
+  let submittedForms = {}; // Track form submissions
 
-  let enveloped = document.getElementById("enveloped");
-  let enveloping = document.getElementById("enveloping");
-  let detached = document.getElementById("detached");
-  let internally_detached = document.getElementById("internally");
-  let select = document.getElementById("select");
-
-  function populate_select(options) {
-    options.forEach((option) => {
-      const newOption = document.createElement("option");
-      newOption.value = option.value;
-      newOption.textContent = option.text;
-      select.appendChild(newOption);
-    });
+  // Function to mark a form as submitted
+  function markFormSubmitted(filename) {
+    console.log(filename);
+    submittedForms[filename] = true;
+    console.log(`Form for ${filename} submitted`);
   }
 
-  $("input[type=radio][name=container]").change(function () {
-    var radio = document.getElementsByName("signature_format");
+  var docs = {{ docs_infos | tojson }};
+  console.log(docs);
 
-    for (var i = 0; i < radio.length; i++) {
-      radio[i].checked = false;
+  function onClick(){
+    let docs_size = docs.length;
+    console.log(docs_size);
+    let allForms = document.querySelectorAll("form");
+    let totalForms = allForms.length;
+    console.log(totalForms);
+    let submittedCount = Object.keys(submittedForms).length;
+    console.log(submittedCount);
+
+    if (submittedCount === totalForms) {
+      alert("All forms submitted! Proceeding...");
+      window.location.href = "{{ url_for('tester.credential_authorization_page') }}";
+    } else {
+      alert(`You need to submit all forms before continuing! (${submittedCount}/${totalForms} submitted)`);
     }
-
-    var radio2 = document.getElementsByName("packaging");
-
-    for (var i = 0; i < radio2.length; i++) {
-      radio2[i].checked = false;
-    }
-
-    select.innerHTML = "";
-
-    if (this.value == "No") {
-      XAdES.disabled = false;
-      CAdES.disabled = false;
-      PAdES.disabled = false;
-      JAdES.disabled = false;
-    } else if (this.value == "ASiC-S" || this.value == "ASiC-S") {
-      XAdES.disabled = false;
-      CAdES.disabled = false;
-      PAdES.disabled = true;
-      JAdES.disabled = true;
-    }
-  });
-
-  $("input[type=radio][name=signature_format]").change(function () {
-    var radio = document.getElementsByName("packaging");
-
-    for (var i = 0; i < radio.length; i++) {
-      radio[i].checked = false;
-    }
-
-    select.innerHTML = "";
-
-    if (this.value == "X") {
-      enveloped.disabled = false;
-      enveloping.disabled = false;
-      detached.disabled = false;
-      internally_detached.disabled = false;
-
-      var options = [
-        { value: "Ades-B-B", text: "XAdES-BASELINE-B" },
-        { value: "Ades-B-T", text: "XAdES-BASELINE-T" },
-        { value: "Ades-B-LT", text: "XAdES-BASELINE-LT" },
-        { value: "Ades-B-LTA", text: "XAdES-BASELINE-LTA" },
-      ];
-
-      populate_select(options);
-    } else if (this.value == "C") {
-      enveloped.disabled = true;
-      enveloping.disabled = false;
-      detached.disabled = false;
-      internally_detached.disabled = true;
-
-      var options = [
-        { value: "Ades-B-B", text: "CAdES-BASELINE-B" },
-        { value: "Ades-B-T", text: "CAdES-BASELINE-T" },
-        { value: "Ades-B-LT", text: "CAdES-BASELINE-LT" },
-        { value: "Ades-B-LTA", text: "CAdES-BASELINE-LTA" },
-      ];
-
-      populate_select(options);
-    } else if (this.value == "P") {
-      enveloped.disabled = false;
-      enveloping.disabled = true;
-      detached.disabled = true;
-      internally_detached.disabled = true;
-
-      var options = [
-        { value: "Ades-B-B", text: "PAdES-BASELINE-B" },
-        { value: "Ades-B-T", text: "PAdES-BASELINE-T" },
-        { value: "Ades-B-LT", text: "PAdES-BASELINE-LT" },
-        { value: "Ades-B-LTA", text: "PAdES-BASELINE-LTA" },
-      ];
-
-      populate_select(options);
-    } else if (this.value == "J") {
-      enveloped.disabled = true;
-      enveloping.disabled = false;
-      detached.disabled = false;
-      internally_detached.disabled = true;
-
-      var options = [
-        { value: "Ades-B-B", text: "JAdES-BASELINE-B" },
-        { value: "Ades-B-T", text: "JAdES-BASELINE-T" },
-        { value: "Ades-B-LT", text: "JAdES-BASELINE-LT" },
-        { value: "Ades-B-LTA", text: "JAdES-BASELINE-LTA" },
-      ];
-
-      populate_select(options);
-    }
-
-    var value_container = document.querySelector(
-      'input[name="container"]:checked'
-    );
-    if (
-      value_container.value == "ASiC-S" ||
-      value_container.value == "ASiC-E"
-    ) {
-      enveloped.disabled = true;
-      enveloping.disabled = true;
-      detached.disabled = false;
-      internally_detached.disabled = true;
-    }
-  });
-
-  document.getElementById("filename").addEventListener("change", (event) => {
-    let input = event.target;
-    let path = input.value;
-    let file = input.files[0];
-    var fileURL = URL.createObjectURL(file);
-    document.getElementById("viewer").src = fileURL;
-    document.getElementById("btncheck").disabled = false;
-  });
+  }
 </script>
+
 {% endblock %}

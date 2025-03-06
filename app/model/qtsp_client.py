@@ -64,26 +64,26 @@ def oauth2_authorize_service_request():
             raise Exception("It was impossible to retrieve the authentication link: "+response.text)
     
     
-def oauth2_authorize_credential_request(hashes, hash_algorithm_oid, credential_id):
+def oauth2_authorize_credential_request(hashes, hash_algorithm_oid, credential_id, numSignatures):
     app.logger.info("Requesting authorization to the credential.")
     code_verifier = secrets.token_urlsafe(32)    
     code_challenge_method = "S256"
     code_challenge_bytes = hashlib.sha256(code_verifier.encode()).digest()
     code_challenge = base64.urlsafe_b64encode(code_challenge_bytes).rstrip(b'=').decode()
     
-    url = cfgserv.AS+"/oauth2/authorize?response_type=code&client_id="+cfgserv.oauth_client_id+"&redirect_uri=" + cfgserv.oauth_redirect_uri+"&scope=credential&code_challenge="+code_challenge+"&code_challenge_method="+code_challenge_method+"&state=12345678&numSignatures=1&hashes="+hashes+"&hashAlgorithmOID="+hash_algorithm_oid+"&credentialID="+credential_id
+    url = cfgserv.AS+"/oauth2/authorize?response_type=code&client_id="+cfgserv.oauth_client_id+"&redirect_uri=" + cfgserv.oauth_redirect_uri+"&scope=credential&code_challenge="+code_challenge+"&code_challenge_method="+code_challenge_method+"&state=12345678&numSignatures="+str(numSignatures)+"&hashes="+hashes+"&hashAlgorithmOID="+hash_algorithm_oid+"&credentialID="+credential_id
     response = requests.get(url=url, allow_redirects=False)
     
-    if(response.status_code == 400):
+    if response.status_code == 400:
         message = response.json()["message"]
         app.logger.error(message)
         raise Exception("It was impossible to retrieve the authentication link: "+message)
     
-    elif(response.status_code == 200):
+    elif response.status_code == 200:
         app.logger.info("Successful Response: "+response.data)
         return code_verifier, response
         
-    elif(response.status_code == 302):
+    elif response.status_code == 302:
         location = response.headers["Location"]
         
         if location.startswith("eudi-openid4vp"):   
