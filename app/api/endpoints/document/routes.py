@@ -61,22 +61,27 @@ def get_document_select_page():
 def _resolve_filepaths_and_names(predefined_files: list | None, uploaded_files=None) -> tuple[list, list]:
     filepaths, filenames = [], []
     if predefined_files is not None:
+        app.logger.info("Retrieving paths and names from predefined files")
         for f in predefined_files:
             filepaths.append(f["filepath"])
             filenames.append(f["filename"])
+        app.logger.info("Retrieved paths and names from predefined files")
     else:
+        app.logger.info("Retrieving paths and names from request")
         for f in (uploaded_files or []):
             file_path, filename = documents_manage_service.save_document(f)
             filepaths.append(file_path)
             filenames.append(filename)
+        app.logger.info("Retrieved paths and names from request")
     return filepaths, filenames
 
 @documents_routes.route("/select", methods=["POST"])
 def post_documents_selected_signature_options():
+    app.logger.info("Received documents to sign and signing options")
     options = request.form.getlist("options")
     predefined_files = get_session_value(SessionState.RECEIVED_DOCUMENTS)
     filepaths, filenames = _resolve_filepaths_and_names(predefined_files, request.files.getlist("files"))
-
+    app.logger.info("Retrieved files' names and paths")
     documents_signature_option = [
         {
             "filepath": path,

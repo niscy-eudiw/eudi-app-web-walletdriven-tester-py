@@ -133,7 +133,7 @@ class CredentialKey:
         self.curve = curve
 
     @classmethod
-    def from_json(cls, data: dict) -> CredentialKey | None:
+    def from_json(cls, data: dict):
         if not data:
             return None
 
@@ -177,7 +177,7 @@ class CredentialCert:
         self.valid_to = valid_to
 
     @classmethod
-    def from_json(cls, data: dict) -> CredentialCert | None:
+    def from_json(cls, data: dict):
         if not data:
             return None
 
@@ -212,7 +212,7 @@ class CredentialAuth:
         self.objects = objects
 
     @classmethod
-    def from_json(cls, data: dict) -> CredentialAuth | None:
+    def from_json(cls, data: dict):
         if not data:
             return None
         try:
@@ -359,7 +359,7 @@ class CredentialCertInfoResponse:
         self.policy = policy
 
     @classmethod
-    def from_json(cls, data: dict) -> CredentialCertInfoResponse | None:
+    def from_json(cls, data: dict):
         if not data:
             return None
         try:
