@@ -21,6 +21,7 @@ from typing import Optional
 import jwt
 from werkzeug.datastructures.structures import MultiDict
 
+
 class DocumentRetrievalRequest:
     request_uri: Optional[str] = None
     client_id: Optional[str] = None
@@ -28,6 +29,7 @@ class DocumentRetrievalRequest:
     def __init__(self, args: MultiDict[str, str]):
         self.request_uri = args.get("request_uri")
         self.client_id = args.get("client_id")
+
 
 class DocumentDigests:
     hash: str = None
@@ -44,6 +46,7 @@ class DocumentDigests:
             label=data.get("label"),
         )
 
+
 class Method:
     type: str = None
 
@@ -53,6 +56,7 @@ class Method:
     @classmethod
     def from_dict(cls, data: dict) -> "Method":
         return cls(type=data.get("type"))
+
 
 class DocumentLocations:
     uri: str = None
@@ -66,8 +70,10 @@ class DocumentLocations:
     def from_dict(cls, data: dict) -> "DocumentLocations":
         return cls(
             uri=data.get("uri"),
-            method=Method.from_dict(data["method"]) if data.get("method") else None,
+            method=Method.from_dict(
+                data["method"]) if data.get("method") else None,
         )
+
 
 class DocumentRetrievalRequestObject:
     response_type: str = None
@@ -109,7 +115,8 @@ class DocumentRetrievalRequestObject:
 
     @classmethod
     def from_jwt(cls, jar_object_string: str) -> "DocumentRetrievalRequestObject":
-        decoded = jwt.decode(jar_object_string, options={"verify_signature": False})
+        decoded = jwt.decode(jar_object_string, options={
+                             "verify_signature": False})
         return cls.from_dict(decoded)
 
     @classmethod
@@ -131,6 +138,56 @@ class DocumentRetrievalRequestObject:
             hash_algorithm_oid=data.get("hashAlgorithmOID"),
         )
 
+
+class ETSI119432DocumentRetrievalRequestObject:
+    response_type: str = None
+    response_mode: Optional[str] = None
+    client_id: str = None
+    redirect_uri: Optional[str] = None
+    state: Optional[str] = None
+    nonce: str = None
+    dcql_query: list[str]
+    transaction_data: list[str]
+
+    def __init__(
+            self,
+            response_type: str = None,
+            response_mode: str = None,
+            client_id: str = None,
+            redirect_uri: str = None,
+            state: str = None,
+            nonce: str = None,
+            dcql_query: list[str] = None,
+            transaction_data: list[str] = None
+    ):
+        self.response_type = response_type
+        self.response_mode = response_mode
+        self.client_id = client_id
+        self.redirect_uri = redirect_uri
+        self.state = state
+        self.nonce = nonce
+        self.dcql_query = dcql_query or []
+        self.transaction_data = transaction_data or []
+
+    @classmethod
+    def from_jwt(cls, jar_object_string: str) -> "ETSI119432DocumentRetrievalRequestObject":
+        decoded = jwt.decode(jar_object_string, options={
+                             "verify_signature": False})
+        return cls.from_dict(decoded)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ETSI119432DocumentRetrievalRequestObject":
+        return cls(
+            response_type=data.get("response_type"),
+            client_id=data.get("client_id"),
+            response_mode=data.get("response_mode"),
+            redirect_uri=data.get("redirect_uri"),
+            nonce=data.get("nonce"),
+            dcql_query=data.get("dcql_query"),
+            transaction_data=data.get("transaction_data"),
+        )
+
+
 class DocumentRetrievalResponse:
     state: Optional[str] = None
     error: Optional[str] = None
@@ -144,7 +201,7 @@ class DocumentRetrievalResponse:
         self.documentWithSignature = documentWithSignature
         self.signatureObject = signatureObject
 
-    def to_dict(self) -> dict[str, str | None | list[str]]:
+    def to_dict(self) -> dict:
         return {
             "state": self.state,
             "signatureObject": self.signatureObject,

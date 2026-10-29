@@ -42,7 +42,7 @@ def configure_logging():
             },
             "file": {
                 "class": "logging.handlers.TimedRotatingFileHandler",
-                "filename": "logs/walletdriven_rp_logs.log",
+                "filename": "logs/walletdriven_tester_logs.log",
                 "when": "D",
                 "interval": 7, # a new file for every week
                 "backupCount": 5, # the number of files that will be retained on the disk

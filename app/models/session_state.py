@@ -51,4 +51,5 @@ class SessionState:
     RESPONSE_URI = "response_uri"
     HASH_ALGORITHM_OID = "hash_algorithm_oid"
     DOCUMENT_LOCATIONS = "document_locations"
+    IS_ETSI_119_432_REQUEST = "is_etsi_119_432_request"
     RECEIVED_DOCUMENTS = "received_documents"

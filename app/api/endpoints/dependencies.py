@@ -16,9 +16,10 @@
 #
 ###############################################################################
 
-from flask import render_template
+from flask import render_template, request, current_app as app
 
 def handle_exception(e):
+    app.logger.exception(f"Unhandled exception on {request.method} {request.path}: {e}")
     return (
         render_template(
             "500.html",

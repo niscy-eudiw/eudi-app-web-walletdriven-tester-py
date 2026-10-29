@@ -17,6 +17,7 @@
 ###############################################################################
 import base64
 from typing import Tuple
+from urllib.parse import parse_qs, urlparse, urlencode
 
 import requests
 from requests import Request
@@ -253,4 +254,7 @@ def oauth2_authorize_with_given_parameters(jsessionid: str, args: dict) -> str:
         cookies={"JSESSIONID": jsessionid},
         allow_redirects=False
     )
-    return response.headers.get("Location")
+    location = response.headers.get("Location")
+    query = parse_qs(urlparse(location).query)
+
+    return "http://127.0.0.1:5000/tester/oauth/login/code?" + urlencode(query, doseq=True)

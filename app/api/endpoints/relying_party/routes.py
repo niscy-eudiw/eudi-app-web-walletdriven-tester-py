@@ -15,12 +15,11 @@
 # limitations under the License.
 #
 ###############################################################################
-
 import os
 from flask import Blueprint, request, current_app as app, url_for, redirect
-from app.services import documents_retrieval_service
 from app.models.session_state import SessionState
-from app.schemas.document_retrieval import DocumentRetrievalRequest
+from app.schemas.document_retrieval import DocumentRetrievalRequestObject, ETSI119432DocumentRetrievalRequestObject
+from app.services import documents_retrieval_service
 from app.utils.session import update_session_values, clear_session
 
 relying_party_routes = Blueprint("rp_routes", __name__, url_prefix="/tester/relying_party_service")
@@ -28,12 +27,22 @@ relying_party_routes.template_folder = os.path.join(os.path.dirname(os.path.absp
 
 @relying_party_routes.route("/", methods=["GET"])
 def get_document_retrieval_signing_request():
-    app.logger.info("Received a signing request from a relying party.")
-    doc_retrieval_request = DocumentRetrievalRequest(request.args)
-    request_object = documents_retrieval_service.get_request_object_through_document_retrieval(doc_retrieval_request)
+    app.logger.info(f"Received a signing request from a relying party: {request.url}")
+
+    try:
+        request_object = documents_retrieval_service.get_request_object(request.args)
+        document_locations = documents_retrieval_service.get_document_locations(request_object)
+    except ValueError as e:
+        app.logger.error(str(e))
+        return str(e), 400
+
     clear_session()
     update_session_values(SessionState.DOCUMENT_ORIGIN, "relying_party")
-    update_session_values(SessionState.RESPONSE_URI, request_object.response_uri)
-    update_session_values(SessionState.HASH_ALGORITHM_OID, request_object.hash_algorithm_oid)
-    update_session_values(SessionState.DOCUMENT_LOCATIONS, request_object.document_locations)
+    if isinstance(request_object, DocumentRetrievalRequestObject):
+        update_session_values(SessionState.RESPONSE_URI, request_object.response_uri)
+        update_session_values(SessionState.HASH_ALGORITHM_OID, request_object.hash_algorithm_oid)
+    update_session_values(SessionState.DOCUMENT_LOCATIONS, document_locations)
+    update_session_values(SessionState.IS_ETSI_119_432_REQUEST,
+                          isinstance(request_object, ETSI119432DocumentRetrievalRequestObject))
+    app.logger.info("Stored the relying party signing request in session. Redirecting to the tester home page.")
     return redirect(url_for("index.get_tester_home_page"))

@@ -33,7 +33,7 @@ base_routes.template_folder = os.path.join(os.path.dirname(os.path.abspath(__fil
 def get_tester_landing_page():
     return render_template('landing.html', redirect_url=settings.SERVICE_URL, rp_url=settings.RP_URL)
 
-@base_routes.route('/tester', methods=['GET'])
+@base_routes.route('/tester/', methods=['GET'])
 def get_tester_home_page():
     is_rp_request = get_session_value(SessionState.DOCUMENT_ORIGIN) == "relying_party"
     clear_session_ignore_document_retrieval()

@@ -27,7 +27,7 @@ from app.utils.session import update_session_values, remove_session_values, get_
 documents_routes = Blueprint("documents_routes", __name__, url_prefix="/tester/document")
 documents_routes.template_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template/')
 
-def _resolve_hash_algos(algo_oid: str | None) -> list:
+def _resolve_hash_algos(algo_oid) -> list:
     if algo_oid is not None:
         return [{"name": settings.SUPPORTED_DIGEST_ALGOS.get(algo_oid), "oid": algo_oid}]
 
@@ -43,8 +43,8 @@ def get_document_select_page():
         document_locations = get_session_value(SessionState.DOCUMENT_LOCATIONS)
         predefined_files = []
         received_documents_info = []
-        for loc in document_locations:
-            document, filename = documents_retrieval_service.get_document_from_uri(loc.uri)
+        for loc in document_locations.get("signatureRequests"):
+            document, filename = documents_retrieval_service.get_document_from_uri(loc.get("href"))
             saved_file_path, saved_filename = documents_manage_service.save_document_with_name(document, filename)
             data = documents_manage_service.get_base64_document(saved_file_path)
             mimetype, _ = mimetypes.guess_type(saved_filename)
@@ -58,7 +58,7 @@ def get_document_select_page():
     remove_session_values(SessionState.DOCUMENTS)
     return render_template('document-select.html', digest_algorithms=hash_algos, received_files=predefined_files)
 
-def _resolve_filepaths_and_names(predefined_files: list | None, uploaded_files=None) -> tuple[list, list]:
+def _resolve_filepaths_and_names(predefined_files, uploaded_files=None) -> tuple[list, list]:
     filepaths, filenames = [], []
     if predefined_files is not None:
         app.logger.info("Retrieving paths and names from predefined files")
@@ -194,10 +194,13 @@ def get_document_signed_page():
         for d in signing_options:
             os.remove(d["filepath"])
             signed_envelope_property_list.append(d["packaging"])
-        response_uri = get_session_value(SessionState.RESPONSE_URI)
-        _ = documents_retrieval_service.post_signed_document_response_uri(response_uri, signed_documents.document_with_signature, signed_envelope_property_list)
+        documents_retrieval_service.post_signed_documents_to_relying_party(
+            get_session_value(SessionState.DOCUMENT_LOCATIONS), get_session_value(SessionState.RESPONSE_URI),
+            signed_documents.document_with_signature, signed_envelope_property_list,
+            as_json=bool(get_session_value(SessionState.IS_ETSI_119_432_REQUEST)))
         remove_session_values(SessionState.DOCUMENT_LOCATIONS)
         remove_session_values(SessionState.RESPONSE_URI)
+        remove_session_values(SessionState.IS_ETSI_119_432_REQUEST)
     else:
         document_retrieval = False
         mime_types, new_filenames = [], []

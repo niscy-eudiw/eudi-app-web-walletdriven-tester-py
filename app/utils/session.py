@@ -48,5 +48,5 @@ def clear_session() -> None:
 def clear_session_ignore_document_retrieval() -> None:
     for key in _VALID_KEYS:
         if not (key in [SessionState.DOCUMENT_ORIGIN, SessionState.RESPONSE_URI,
-        SessionState.HASH_ALGORITHM_OID, SessionState.DOCUMENT_LOCATIONS]):
+        SessionState.HASH_ALGORITHM_OID, SessionState.DOCUMENT_LOCATIONS, SessionState.IS_ETSI_119_432_REQUEST]):
             session.pop(key, None)

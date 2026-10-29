@@ -45,16 +45,18 @@ def preview_authorization_request():
         _, code_challenge = setup_pkce_session()
 
     if scope == "credential-creation":
-        oauth_request = f"GET {oauth2service.get_oauth2_authorize_request_preview(scope="credential-creation", code_challenge=code_challenge, authentication=authentication_flow)}"
+        authorize_url = oauth2service.get_oauth2_authorize_request_preview(scope="credential-creation", code_challenge=code_challenge, authentication=authentication_flow)
+        oauth_request = f"GET {authorize_url}"
         redirect_url = url_for("auth.create_certificate_authentication")
     elif scope == "service":
-        oauth_request = f"GET {oauth2service.get_oauth2_authorize_request_preview(scope="service", code_challenge=code_challenge, authentication=authentication_flow)}"
+        authorize_url = oauth2service.get_oauth2_authorize_request_preview(scope="service", code_challenge=code_challenge, authentication=authentication_flow)
+        oauth_request = f"GET {authorize_url}"
         redirect_url = url_for("auth.service_authentication")
     elif scope == "credential":
         hashes = get_session_value(SessionState.HASHES)
         credential_id = get_session_value(SessionState.CERTIFICATE_ID)
         hash_algorithm_oid = get_session_value(SessionState.DIGEST_ALGORITHM_OID)
-        oauth_request = f"GET {oauth2service.get_oauth2_authorize_request_preview(
+        authorize_url = oauth2service.get_oauth2_authorize_request_preview(
             scope="credential",
             authentication=authentication_flow,
             code_challenge=code_challenge,
@@ -62,13 +64,15 @@ def preview_authorization_request():
             numSignatures=len(hashes),
             hashAlgorithmOID=hash_algorithm_oid,
             hashes=hashes
-        )}"
+        )
+        oauth_request = f"GET {authorize_url}"
         redirect_url = url_for("auth.credential_authentication")
     elif scope == "credential-deletion":
         credential_id = request.json["credentialId"]
         update_session_values(SessionState.CERTIFICATE_ID, credential_id)
-        oauth_request = f"GET {oauth2service.get_oauth2_authorize_request_preview(scope="credential-deletion", authentication=authentication_flow,
-            code_challenge=code_challenge, credential_id=credential_id)}"
+        authorize_url = oauth2service.get_oauth2_authorize_request_preview(scope="credential-deletion", authentication=authentication_flow,
+            code_challenge=code_challenge, credential_id=credential_id)
+        oauth_request = f"GET {authorize_url}"
         redirect_url = url_for("auth.delete_certificate_authentication")
     return {"requestUrl": oauth_request, "redirectUrl": redirect_url}
 
